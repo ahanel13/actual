@@ -37,7 +37,7 @@ export function UpdateNotification() {
           backgroundColor: theme.pageTextPositive,
           color: theme.tableBackground,
           padding: '7px 10px',
-          borderRadius: 4,
+          borderRadius: 8,
           zIndex: 10000,
           maxWidth: 450,
         }}

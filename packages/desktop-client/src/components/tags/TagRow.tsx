@@ -156,7 +156,7 @@ export const TagRow = memo(
         <Cell width="auto" style={{ padding: '0 10px' }} plain>
           <CellButton
             style={{
-              borderRadius: 4,
+              borderRadius: 8,
               padding: '3px 6px',
               backgroundColor: theme.noticeBackground,
               border: '1px solid ' + theme.noticeBackground,

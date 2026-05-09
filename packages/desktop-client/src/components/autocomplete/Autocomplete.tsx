@@ -663,7 +663,7 @@ function MultiItem({ name, onRemove }: MultiItemProps) {
         backgroundColor: theme.pillBackgroundSelected,
         padding: '2px 4px',
         margin: '2px',
-        borderRadius: 4,
+        borderRadius: 8,
       }}
     >
       {name}
@@ -745,7 +745,7 @@ function MultiAutocomplete<T extends AutocompleteItem>({
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: theme.tableBackground,
-            borderRadius: 4,
+            borderRadius: 8,
             border: '1px solid ' + theme.formInputBorder,
             ...(focused && {
               border: '1px solid ' + theme.formInputBorderSelected,

@@ -125,7 +125,7 @@ export const Modal = ({
                   minWidth: '90vw',
                   maxHeight: 'calc(var(--visual-viewport-height) * 0.9)',
                   minHeight: 0,
-                  borderRadius: 6,
+                  borderRadius: 16,
                   //border: '1px solid ' + theme.modalBorder,
                   color: theme.pageText,
                   backgroundColor: theme.modalBackground,

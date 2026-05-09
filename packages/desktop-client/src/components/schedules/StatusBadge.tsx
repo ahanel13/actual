@@ -99,7 +99,7 @@ export function StatusBadge({ status }: { status: ScheduleStatusType }) {
         color,
         backgroundColor,
         padding: '6px 8px',
-        borderRadius: 4,
+        borderRadius: 8,
         flexDirection: 'row',
         alignItems: 'center',
         flexShrink: 0,

@@ -132,7 +132,7 @@ export const styles: CSSProperties = {
     padding: 5,
     ...shadowLarge,
     borderWidth: 2,
-    borderRadius: 4,
+    borderRadius: 8,
     borderStyle: 'solid',
     borderColor: theme.tooltipBorder,
     backgroundColor: theme.tooltipBackground,
@@ -152,8 +152,8 @@ export const styles: CSSProperties = {
   editorPill: {
     color: theme.pillText,
     backgroundColor: theme.pillBackground,
-    borderRadius: 4,
-    padding: '3px 5px',
+    borderRadius: 500,
+    padding: '3px 8px',
   },
   mobileListItem: {
     borderBottom: `1px solid ${theme.tableBorder}`,
@@ -164,8 +164,8 @@ export const styles: CSSProperties = {
   tableContainer: {
     flex: 1,
     border: '1px solid ' + theme.tableBorder,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     overflow: 'hidden',
   },
 };

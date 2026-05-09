@@ -43,7 +43,7 @@ export function BankSyncStatus() {
             <animated.div key={item} style={style}>
               <View
                 style={{
-                  borderRadius: 4,
+                  borderRadius: 8,
                   backgroundColor: theme.pillBackgroundSelected,
                   color: theme.pillTextSelected,
                   padding: '5px 13px',

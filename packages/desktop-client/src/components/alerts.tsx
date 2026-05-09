@@ -33,7 +33,7 @@ const Alert = ({
         color,
         fontSize: 13,
         ...styles.shadow,
-        borderRadius: 4,
+        borderRadius: 8,
         backgroundColor,
         padding: 10,
         flexDirection: 'row',
