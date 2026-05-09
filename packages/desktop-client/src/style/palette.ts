@@ -84,6 +84,25 @@ export const hover = '#fafafa';
 export const border = '#e8ecf0';
 export const selected = '#b3d9ff';
 
+// Monarch teal — primary accent color
+export const monarchTeal50  = '#e6faf8';
+export const monarchTeal100 = '#b3f0e9';
+export const monarchTeal200 = '#80e5d9';
+export const monarchTeal300 = '#4dd9c9';
+export const monarchTeal400 = '#26cfc0';
+export const monarchTeal500 = '#00c2a8';
+export const monarchTeal600 = '#009e8a';
+export const monarchTeal700 = '#007a6c';
+export const monarchTeal800 = '#00574e';
+export const monarchTeal900 = '#003330';
+
+// Monarch sidebar — dark charcoal-navy
+export const monarchSidebar100 = '#3b3e56';
+export const monarchSidebar200 = '#2e3149';
+export const monarchSidebar300 = '#23263c';
+export const monarchSidebar400 = '#1a1c30';
+export const monarchSidebar500 = '#13152b';
+
 // Chart colors - Qualitative scale (9 colors)
 export const chartQual1 = '#45B29D'; // Dark Teal
 export const chartQual2 = '#EFC94C'; // Yellow
