@@ -115,9 +115,9 @@ export const buttonMenuSelectedBorder = buttonMenuSelectedBackground;
 
 export const buttonPrimaryText = colorPalette.white;
 export const buttonPrimaryTextHover = buttonPrimaryText;
-export const buttonPrimaryBackground = colorPalette.purple500;
-export const buttonPrimaryBackgroundHover = colorPalette.purple300;
-export const buttonPrimaryBorder = buttonPrimaryBackground;
+export const buttonPrimaryBackground = colorPalette.monarchTeal500;
+export const buttonPrimaryBackgroundHover = colorPalette.monarchTeal400;
+export const buttonPrimaryBorder = colorPalette.monarchTeal500;
 export const buttonPrimaryShadow = 'rgba(0, 0, 0, 0.3)';
 export const buttonPrimaryDisabledText = colorPalette.white;
 export const buttonPrimaryDisabledBackground = colorPalette.navy300;
@@ -192,7 +192,7 @@ export const checkboxBackgroundSelected = colorPalette.blue500;
 export const checkboxBorderSelected = colorPalette.blue500;
 export const checkboxShadowSelected = colorPalette.blue300;
 export const checkboxToggleBackground = colorPalette.gray400;
-export const checkboxToggleBackgroundSelected = colorPalette.purple600;
+export const checkboxToggleBackgroundSelected = colorPalette.monarchTeal500;
 export const checkboxToggleDisabled = colorPalette.gray200;
 
 export const pillBackground = colorPalette.navy150;
@@ -227,8 +227,8 @@ export const budgetOtherMonth = colorPalette.gray50;
 export const budgetHeaderCurrentMonth = budgetOtherMonth;
 export const budgetHeaderOtherMonth = colorPalette.gray80;
 
-export const floatingActionBarBackground = colorPalette.purple400;
-export const floatingActionBarBorder = floatingActionBarBackground;
+export const floatingActionBarBackground = colorPalette.monarchTeal500;
+export const floatingActionBarBorder = colorPalette.monarchTeal500;
 export const floatingActionBarText = colorPalette.navy50;
 
 export const tooltipText = colorPalette.navy900;
