@@ -88,7 +88,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
     >
       <View style={headerLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Budgeted</Trans>
+          <Trans>Budget</Trans>
         </Text>
         <EnvelopeCellValue
           binding={envelopeBudget.totalBudgeted}
@@ -101,7 +101,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
       </View>
       <View style={headerLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Spent</Trans>
+          <Trans>Actual</Trans>
         </Text>
         <EnvelopeCellValue binding={envelopeBudget.totalSpent} type="financial">
           {props => <CellValueText {...props} style={cellStyle} />}
@@ -109,7 +109,7 @@ export const BudgetTotalsMonth = memo(function BudgetTotalsMonth() {
       </View>
       <View style={headerLabelStyle}>
         <Text style={{ color: theme.tableHeaderText }}>
-          <Trans>Balance</Trans>
+          <Trans>Remaining</Trans>
         </Text>
         <EnvelopeCellValue
           binding={envelopeBudget.totalBalance}
@@ -238,11 +238,19 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
 
   const showScheduleIndicator = schedule && scheduleStatus;
 
+  const budgeted =
+    useEnvelopeSheetValue(envelopeBudget.catBudgeted(category.id)) ?? 0;
+  const spent =
+    useEnvelopeSheetValue(envelopeBudget.catSumAmount(category.id)) ?? 0;
+  const spentPct = budgeted !== 0 ? Math.abs(spent) / Math.abs(budgeted) : 0;
+  const isOverBudget = budgeted !== 0 && Math.abs(spent) > Math.abs(budgeted);
+
   return (
     <View
       style={{
         flex: 1,
         flexDirection: 'row',
+        position: 'relative',
         backgroundColor: monthUtils.isCurrentMonth(month)
           ? theme.budgetCurrentMonth
           : theme.budgetOtherMonth,
@@ -527,6 +535,29 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
           />
         </Popover>
       </Field>
+      {budgeted !== 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: styles.monthRightPadding,
+            height: 2,
+            backgroundColor: theme.tableBorder,
+          }}
+        >
+          <View
+            style={{
+              width: `${Math.min(spentPct * 100, 100)}%`,
+              height: '100%',
+              backgroundColor: isOverBudget
+                ? theme.numberNegative
+                : theme.numberPositive,
+              borderRadius: 1,
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 });
