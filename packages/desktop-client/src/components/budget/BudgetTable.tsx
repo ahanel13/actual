@@ -234,27 +234,6 @@ export function BudgetTable(props: BudgetTableProps) {
         }),
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          overflow: 'hidden',
-          flexShrink: 0,
-          // This is necessary to align with the table because the
-          // table has this padding to allow the shadow to show
-          paddingLeft: 5,
-          paddingRight: 5 + getScrollbarWidth(),
-        }}
-      >
-        <View style={{ width: 200 + 100 * categoryExpandedState }} />
-        <MonthsProvider
-          startMonth={prewarmStartMonth}
-          numMonths={numMonths}
-          monthBounds={monthBounds}
-          type={type}
-        >
-          <BudgetSummaries />
-        </MonthsProvider>
-      </View>
 
       <MonthsProvider
         startMonth={startMonth}
