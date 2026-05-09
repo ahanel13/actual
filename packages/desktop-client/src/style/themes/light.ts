@@ -16,8 +16,8 @@ export const pageTextLink = colorPalette.blue600;
 export const pageTextLinkLight = colorPalette.blue300;
 
 export const cardBackground = colorPalette.white;
-export const cardBorder = colorPalette.purple700;
-export const cardShadow = colorPalette.navy700;
+export const cardBorder = colorPalette.monarchTeal700;
+export const cardShadow = colorPalette.monarchSidebar300;
 
 export const tableBackground = colorPalette.white;
 export const tableRowBackgroundHover = colorPalette.navy50;
@@ -38,7 +38,7 @@ export const tableRowBackgroundHighlightText = colorPalette.navy700;
 export const tableRowHeaderBackground = colorPalette.navy50;
 export const tableRowHeaderText = colorPalette.navy800;
 
-export const numberPositive = colorPalette.green700;
+export const numberPositive = colorPalette.monarchTeal600;
 export const numberNegative = colorPalette.red500;
 export const numberNeutral = colorPalette.navy100;
 export const budgetNumberNegative = numberNegative;
@@ -47,8 +47,8 @@ export const budgetNumberNeutral = tableText;
 export const budgetNumberPositive = budgetNumberNeutral;
 export const templateNumberFunded = numberPositive;
 export const templateNumberUnderFunded = colorPalette.orange700;
-export const toBudgetPositive = numberPositive;
-export const toBudgetZero = numberPositive;
+export const toBudgetPositive = colorPalette.monarchTeal600;
+export const toBudgetZero = colorPalette.monarchTeal600;
 export const toBudgetNegative = budgetNumberNegative;
 
 export const sidebarBackground = colorPalette.monarchSidebar400;
@@ -81,25 +81,25 @@ export const menuAutoCompleteItemText = menuAutoCompleteText;
 
 export const modalBackground = colorPalette.white;
 export const modalBorder = colorPalette.white;
-export const mobileHeaderBackground = colorPalette.purple400;
+export const mobileHeaderBackground = colorPalette.monarchTeal500;
 export const mobileHeaderText = colorPalette.navy50;
 export const mobileHeaderTextSubdued = colorPalette.gray200;
 export const mobileHeaderTextHover = 'rgba(200, 200, 200, .15)';
 export const mobilePageBackground = colorPalette.navy50;
 export const mobileNavBackground = colorPalette.white;
 export const mobileNavItem = colorPalette.gray300;
-export const mobileNavItemSelected = colorPalette.purple500;
+export const mobileNavItemSelected = colorPalette.monarchTeal500;
 export const mobileAccountShadow = colorPalette.navy300;
 export const mobileAccountText = colorPalette.blue800;
-export const mobileTransactionSelected = colorPalette.purple500;
+export const mobileTransactionSelected = colorPalette.monarchTeal500;
 
 // Mobile view themes (for the top bar)
 export const mobileViewTheme = mobileHeaderBackground;
-export const mobileConfigServerViewTheme = colorPalette.purple500;
+export const mobileConfigServerViewTheme = colorPalette.monarchTeal500;
 
-export const markdownNormal = colorPalette.purple150;
-export const markdownDark = colorPalette.purple400;
-export const markdownLight = colorPalette.purple100;
+export const markdownNormal = colorPalette.monarchTeal200;
+export const markdownDark = colorPalette.monarchTeal400;
+export const markdownLight = colorPalette.monarchTeal100;
 
 // Button
 export const buttonMenuText = colorPalette.navy100;
@@ -168,9 +168,9 @@ export const errorTextDark = colorPalette.red700;
 export const errorTextDarker = colorPalette.red900;
 export const errorTextMenu = colorPalette.red200;
 export const errorBorder = colorPalette.red500;
-export const upcomingBackground = colorPalette.purple100;
-export const upcomingText = colorPalette.purple700;
-export const upcomingBorder = colorPalette.purple500;
+export const upcomingBackground = colorPalette.monarchTeal50;
+export const upcomingText = colorPalette.monarchTeal700;
+export const upcomingBorder = colorPalette.monarchTeal500;
 
 export const formLabelText = colorPalette.blue600;
 export const formLabelBackground = colorPalette.blue200;
@@ -198,12 +198,12 @@ export const checkboxToggleDisabled = colorPalette.gray200;
 export const pillBackground = colorPalette.navy150;
 export const pillBackgroundLight = colorPalette.navy50;
 export const pillText = colorPalette.navy800;
-export const pillTextHighlighted = colorPalette.purple600;
+export const pillTextHighlighted = colorPalette.monarchTeal600;
 export const pillBorder = colorPalette.navy150;
 export const pillBorderDark = colorPalette.navy300;
-export const pillBackgroundSelected = colorPalette.blue150;
-export const pillTextSelected = colorPalette.blue900;
-export const pillBorderSelected = colorPalette.purple500;
+export const pillBackgroundSelected = colorPalette.monarchTeal100;
+export const pillTextSelected = colorPalette.monarchTeal900;
+export const pillBorderSelected = colorPalette.monarchTeal500;
 export const pillTextSubdued = colorPalette.navy200;
 
 export const reportsRed = colorPalette.red300;
@@ -217,9 +217,9 @@ export const reportsNumberNegative = numberNegative;
 export const reportsNumberNeutral = numberNeutral;
 export const reportsChartFill = reportsNumberPositive;
 
-export const noteTagBackground = colorPalette.purple125;
-export const noteTagBackgroundHover = colorPalette.purple150;
-export const noteTagDefault = colorPalette.purple125;
+export const noteTagBackground = colorPalette.monarchTeal100;
+export const noteTagBackgroundHover = colorPalette.monarchTeal200;
+export const noteTagDefault = colorPalette.monarchTeal100;
 export const noteTagText = colorPalette.black;
 
 export const budgetCurrentMonth = tableBackground;
