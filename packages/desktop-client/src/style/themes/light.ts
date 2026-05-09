@@ -51,14 +51,14 @@ export const toBudgetPositive = numberPositive;
 export const toBudgetZero = numberPositive;
 export const toBudgetNegative = budgetNumberNegative;
 
-export const sidebarBackground = colorPalette.navy900;
+export const sidebarBackground = colorPalette.monarchSidebar400;
 export const sidebarItemBackgroundPending = colorPalette.orange200;
 export const sidebarItemBackgroundPositive = colorPalette.green500;
 export const sidebarItemBackgroundFailed = colorPalette.red300;
-export const sidebarItemBackgroundHover = colorPalette.navy800;
-export const sidebarItemAccentSelected = colorPalette.purple200;
+export const sidebarItemBackgroundHover = colorPalette.monarchSidebar300;
+export const sidebarItemAccentSelected = colorPalette.monarchTeal400;
 export const sidebarItemText = colorPalette.navy150;
-export const sidebarItemTextSelected = colorPalette.purple200;
+export const sidebarItemTextSelected = colorPalette.monarchTeal300;
 export const sidebarBudgetName = colorPalette.navy150;
 
 export const menuBackground = colorPalette.white;
