@@ -39,15 +39,16 @@ import { useDispatch } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
 
 export const accountNameStyle: CSSProperties = {
-  marginTop: -2,
-  marginBottom: 2,
-  paddingTop: 4,
-  paddingBottom: 4,
-  paddingRight: 15,
+  marginTop: 1,
+  marginBottom: 1,
+  paddingTop: 5,
+  paddingBottom: 5,
+  paddingRight: 12,
   paddingLeft: 10,
+  borderRadius: 8,
   textDecoration: 'none',
   color: theme.sidebarItemText,
-  ':hover': { backgroundColor: theme.sidebarItemBackgroundHover },
+  ':hover': { backgroundColor: theme.sidebarItemBackgroundHover, borderRadius: 8 },
   ...styles.smallText,
 };
 
@@ -150,21 +151,14 @@ export function Account<FieldName extends SheetFields<'account'>>({
               ...accountNameStyle,
               ...style,
               position: 'relative',
-              borderLeft: '4px solid transparent',
               ...(updated && { fontWeight: 700 }),
             }}
             activeStyle={{
-              borderColor: theme.sidebarItemAccentSelected,
+              backgroundColor: theme.sidebarItemBackgroundHover,
               color: theme.sidebarItemTextSelected,
-              // This is kind of a hack, but we don't ever want the account
-              // that the user is looking at to be "bolded" which means it
-              // has unread transactions. The system does mark is read and
-              // unbolds it, but it still "flashes" bold so this just
-              // ignores it if it's active
               fontWeight: (style && style.fontWeight) || 'normal',
               '& .dot': {
                 backgroundColor: theme.sidebarItemAccentSelected,
-                transform: 'translateX(-4.5px)',
               },
             }}
           >

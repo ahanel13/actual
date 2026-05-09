@@ -53,22 +53,30 @@ export function SecondaryItem({
   );
 
   return (
-    <View style={{ flexShrink: 0, ...style }}>
+    <View
+      style={{ flexShrink: 0, paddingLeft: 8, paddingRight: 8, ...style }}
+    >
       <ItemContent
         style={{
           ...accountNameStyle,
           color: theme.sidebarItemText,
-          paddingLeft: 14 + indent,
+          paddingLeft: 11 + indent,
+          paddingTop: 8,
+          paddingBottom: 8,
+          borderRadius: 8,
           fontWeight: bold ? fontWeight : null,
-          ':hover': { backgroundColor: theme.sidebarItemBackgroundHover },
+          ':hover': {
+            backgroundColor: theme.sidebarItemBackgroundHover,
+            borderRadius: 8,
+          },
         }}
         to={to}
         onClick={onClick}
         activeStyle={{
-          borderLeft: '4px solid ' + theme.sidebarItemTextSelected,
-          paddingLeft: 14 - 4 + indent,
+          backgroundColor: theme.sidebarItemBackgroundHover,
+          borderRadius: 8,
           color: theme.sidebarItemTextSelected,
-          fontWeight: bold ? fontWeight : null,
+          fontWeight: fontWeight,
         }}
       >
         {content}
