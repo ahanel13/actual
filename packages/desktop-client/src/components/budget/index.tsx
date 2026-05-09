@@ -327,6 +327,7 @@ export function Budget() {
             <MonarchSummaryPanel
               month={startMonth}
               categoryGroups={categoryGroups}
+              onBudgetAction={onBudgetAction}
             />
           )}
         </View>
