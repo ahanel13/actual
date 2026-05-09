@@ -39,6 +39,7 @@ import { useSyncedPref } from '#hooks/useSyncedPref';
 import { AutoSizingBudgetTable } from './DynamicBudgetTable';
 import * as envelopeBudget from './envelope/EnvelopeBudgetComponents';
 import { EnvelopeBudgetProvider } from './envelope/EnvelopeBudgetContext';
+import { MonarchSummaryPanel } from './MonarchSummaryPanel';
 import * as trackingBudget from './tracking/TrackingBudgetComponents';
 import { TrackingBudgetProvider } from './tracking/TrackingBudgetContext';
 import { prewarmAllMonths, prewarmMonth } from './util';
@@ -320,7 +321,15 @@ export function Budget() {
             </Button>
           )}
         </View>
-        <View style={{ flex: 1 }}>{table}</View>
+        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+          <View style={{ flex: 1, overflow: 'hidden' }}>{table}</View>
+          {budgetType === 'envelope' && (
+            <MonarchSummaryPanel
+              month={startMonth}
+              categoryGroups={categoryGroups}
+            />
+          )}
+        </View>
       </View>
     </SheetNameProvider>
   );
