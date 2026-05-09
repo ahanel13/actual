@@ -42,6 +42,7 @@ export function Item({
 }: ItemProps) {
   const hoverStyle = {
     backgroundColor: theme.sidebarItemBackgroundHover,
+    borderRadius: 8,
   };
 
   const content = (
@@ -59,14 +60,15 @@ export function Item({
   );
 
   return (
-    <View style={{ flexShrink: 0, ...style }}>
+    <View style={{ flexShrink: 0, paddingLeft: 8, paddingRight: 8, ...style }}>
       <ItemContent
         style={{
           ...styles.mediumText,
-          paddingTop: 9,
-          paddingBottom: 9,
-          paddingLeft: 19 + indent,
+          paddingTop: 8,
+          paddingBottom: 8,
+          paddingLeft: 11 + indent,
           paddingRight: 10,
+          borderRadius: 8,
           textDecoration: 'none',
           color: theme.sidebarItemText,
           ...(forceHover ? hoverStyle : {}),
@@ -74,9 +76,10 @@ export function Item({
         }}
         forceActive={forceActive}
         activeStyle={{
-          borderLeft: '4px solid ' + theme.sidebarItemTextSelected,
-          paddingLeft: 19 + indent - 4,
+          backgroundColor: theme.sidebarItemBackgroundHover,
+          borderRadius: 8,
           color: theme.sidebarItemTextSelected,
+          fontWeight: 600,
         }}
         to={to}
         onClick={onClick}

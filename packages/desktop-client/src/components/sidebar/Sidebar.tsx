@@ -38,7 +38,7 @@ export function Sidebar() {
 
   const [sidebarWidthLocalPref, setSidebarWidthLocalPref] =
     useLocalPref('sidebarWidth');
-  const DEFAULT_SIDEBAR_WIDTH = 240;
+  const DEFAULT_SIDEBAR_WIDTH = 224;
   const MAX_SIDEBAR_WIDTH = width / 3;
   const MIN_SIDEBAR_WIDTH = 200;
 
