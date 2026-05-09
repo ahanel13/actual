@@ -84,24 +84,43 @@ export const hover = '#fafafa';
 export const border = '#e8ecf0';
 export const selected = '#b3d9ff';
 
-// Monarch teal — primary accent color
-export const monarchTeal50  = '#e6faf8';
-export const monarchTeal100 = '#b3f0e9';
-export const monarchTeal200 = '#80e5d9';
-export const monarchTeal300 = '#4dd9c9';
-export const monarchTeal400 = '#26cfc0';
-export const monarchTeal500 = '#00c2a8';
-export const monarchTeal600 = '#009e8a';
-export const monarchTeal700 = '#007a6c';
-export const monarchTeal800 = '#00574e';
-export const monarchTeal900 = '#003330';
+// Monarch warm gray palette (beige-toned, not blue-gray)
+export const monarchGray1  = '#fbfaf8';
+export const monarchGray2  = '#f6f5f3';
+export const monarchGray3  = '#efece9';
+export const monarchGray4  = '#ebe8e5';
+export const monarchGray5  = '#e4e1de';
+export const monarchGray6  = '#dcd9d6';
+export const monarchGray7  = '#d1cecb';
+export const monarchGray8  = '#bebbb8';
+export const monarchGray9  = '#8f8c8a';
+export const monarchGray10 = '#84827f';
+export const monarchGray11 = '#777573';
+export const monarchGray12 = '#22201d';
 
-// Monarch sidebar — dark charcoal-navy
-export const monarchSidebar100 = '#3b3e56';
-export const monarchSidebar200 = '#2e3149';
-export const monarchSidebar300 = '#23263c';
-export const monarchSidebar400 = '#1a1c30';
-export const monarchSidebar500 = '#13152b';
+// Monarch orange — brand / primary action color
+export const monarchOrange3  = '#ffe9de';
+export const monarchOrange4  = '#ffd7c4';
+export const monarchOrange9  = '#ff692d';
+export const monarchOrange10 = '#f35b16';
+export const monarchOrange11 = '#d64700';
+export const monarchOrange12 = '#592c1d';
+
+// Monarch green — positive / income
+export const monarchGreen3  = '#e6f6eb';
+export const monarchGreen9  = '#30a46c';
+export const monarchGreen11 = '#218358';
+export const monarchGreen12 = '#193b2d';
+
+// Monarch red — negative / danger
+export const monarchRed3  = '#feebec';
+export const monarchRed9  = '#e5484d';
+export const monarchRed11 = '#ce2c31';
+
+// Monarch blue — input focus / links
+export const monarchBlue9  = '#00a2c7';
+export const monarchBlue10 = '#0797b9';
+export const monarchBlue11 = '#107d98';
 
 // Chart colors - Qualitative scale (9 colors)
 export const chartQual1 = '#45B29D'; // Dark Teal
