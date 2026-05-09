@@ -154,7 +154,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
               ...(updated && { fontWeight: 700 }),
             }}
             activeStyle={{
-              backgroundColor: theme.sidebarItemBackgroundHover,
+              backgroundColor: theme.sidebarItemAccentSelected,
               color: theme.sidebarItemTextSelected,
               fontWeight: (style && style.fontWeight) || 'normal',
               '& .dot': {

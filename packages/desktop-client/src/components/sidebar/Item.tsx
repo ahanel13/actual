@@ -76,7 +76,7 @@ export function Item({
         }}
         forceActive={forceActive}
         activeStyle={{
-          backgroundColor: theme.sidebarItemBackgroundHover,
+          backgroundColor: theme.sidebarItemAccentSelected,
           borderRadius: 8,
           color: theme.sidebarItemTextSelected,
           fontWeight: 600,

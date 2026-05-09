@@ -73,7 +73,7 @@ export function SecondaryItem({
         to={to}
         onClick={onClick}
         activeStyle={{
-          backgroundColor: theme.sidebarItemBackgroundHover,
+          backgroundColor: theme.sidebarItemAccentSelected,
           borderRadius: 8,
           color: theme.sidebarItemTextSelected,
           fontWeight: fontWeight,
