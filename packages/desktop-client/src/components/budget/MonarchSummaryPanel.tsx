@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
@@ -14,31 +14,50 @@ import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { BudgetMonthMenu } from '#components/budget/envelope/budgetsummary/BudgetMonthMenu';
 import { ToBudget } from '#components/budget/envelope/budgetsummary/ToBudget';
-import { TotalsList } from '#components/budget/envelope/budgetsummary/TotalsList';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 import { useUndo } from '#hooks/useUndo';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
-type GroupCardProps = {
-  group: CategoryGroupEntity;
+// Renders nothing — just reads a group's budgeted value and reports it up
+function GroupBudgetReader({
+  groupId,
+  onValue,
+}: {
+  groupId: string;
+  onValue: (id: string, val: number) => void;
+}) {
+  const value = (useEnvelopeSheetValue(
+    envelopeBudget.groupBudgeted(groupId),
+  ) ?? 0) as number;
+  useEffect(() => {
+    onValue(groupId, value);
+  }, [groupId, value, onValue]);
+  return null;
+}
+
+type SectionCardProps = {
+  label: string;
+  budget: number;
+  actual: number;
+  remaining: number;
+  invertProgress?: boolean;
 };
 
-function GroupCard({ group }: GroupCardProps) {
+function SectionCard({
+  label,
+  budget,
+  actual,
+  remaining,
+  invertProgress = false,
+}: SectionCardProps) {
+  const { t } = useTranslation();
   const format = useFormat();
-  const budgeted =
-    useEnvelopeSheetValue(envelopeBudget.groupBudgeted(group.id)) ?? 0;
-  const spent = Math.abs(
-    useEnvelopeSheetValue(envelopeBudget.groupSumAmount(group.id)) ?? 0,
-  );
-  const balance =
-    useEnvelopeSheetValue(envelopeBudget.groupBalance(group.id)) ?? 0;
-
-  if (budgeted === 0 && spent === 0) return null;
-
-  const absBudgeted = Math.abs(budgeted);
-  const pct = absBudgeted !== 0 ? Math.min(spent / absBudgeted, 1) : 0;
-  const isOver = absBudgeted !== 0 && spent > absBudgeted;
+  const absBudget = Math.abs(budget);
+  const absActual = Math.abs(actual);
+  const pct = absBudget > 0 ? Math.min(absActual / absBudget, 1) : 0;
+  const isOver = absBudget > 0 && absActual > absBudget;
+  const isRemNegative = remaining < 0;
 
   return (
     <View
@@ -55,35 +74,22 @@ function GroupCard({ group }: GroupCardProps) {
         style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems: 'baseline',
-          marginBottom: 10,
+          alignItems: 'center',
+          marginBottom: 8,
         }}
       >
-        <View
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: theme.pageText,
-            flexShrink: 1,
-            marginRight: 8,
-          }}
-        >
-          {group.name}
+        <View style={{ fontSize: 13, fontWeight: 600, color: theme.pageText }}>
+          {label}
         </View>
         <PrivacyFilter>
-          <View
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: isOver ? theme.numberNegative : theme.numberPositive,
-              flexShrink: 0,
-            }}
-          >
-            <FinancialText>{format(balance, 'financial')}</FinancialText>
+          <View style={{ fontSize: 12, color: theme.pageTextSubdued }}>
+            <FinancialText>{format(absBudget, 'financial')}</FinancialText>
+            {' ' + t('budget')}
           </View>
         </PrivacyFilter>
       </View>
 
+      {/* Progress bar */}
       <View
         style={{
           height: 6,
@@ -104,17 +110,24 @@ function GroupCard({ group }: GroupCardProps) {
         />
       </View>
 
+      {/* Actual vs Remaining */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <PrivacyFilter>
           <View style={{ fontSize: 12, color: theme.pageTextLight }}>
-            <FinancialText>{format(spent, 'financial')}</FinancialText>
-            {' spent'}
+            <FinancialText>{format(absActual, 'financial')}</FinancialText>
+            {' ' + (invertProgress ? t('earned') : t('spent'))}
           </View>
         </PrivacyFilter>
         <PrivacyFilter>
-          <View style={{ fontSize: 12, color: theme.pageTextSubdued }}>
-            <FinancialText>{format(absBudgeted, 'financial')}</FinancialText>
-            {' budget'}
+          <View
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: isRemNegative ? theme.numberNegative : theme.numberPositive,
+            }}
+          >
+            <FinancialText>{format(Math.abs(remaining), 'financial')}</FinancialText>
+            {' ' + t('remaining')}
           </View>
         </PrivacyFilter>
       </View>
@@ -146,9 +159,43 @@ export function MonarchSummaryPanel({
   );
   const displayMonth = monthUtils.format(month, "MMMM ''yy", locale);
 
-  const expenseGroups = categoryGroups.filter(
-    g => g.type !== 'income' && !g.hidden,
+  // Aggregate income group budgets (hooks can't be called in a loop)
+  const [incomeBudgets, setIncomeBudgets] = useState<Record<string, number>>(
+    {},
   );
+  const onGroupBudget = useCallback((id: string, val: number) => {
+    setIncomeBudgets(prev =>
+      prev[id] === val ? prev : { ...prev, [id]: val },
+    );
+  }, []);
+
+  const incomeGroups = categoryGroups.filter(
+    g => g.type === 'income' && !g.hidden,
+  );
+
+  const totalIncomeBudget = Object.values(incomeBudgets).reduce(
+    (sum, v) => sum + v,
+    0,
+  );
+
+  // Expense totals from single bindings
+  const totalIncome =
+    (useEnvelopeSheetValue(envelopeBudget.totalIncome) ?? 0) as number;
+  const totalExpenseBudget =
+    (useEnvelopeSheetValue(envelopeBudget.totalBudgeted) ?? 0) as number;
+  const totalSpent =
+    (useEnvelopeSheetValue(envelopeBudget.totalSpent) ?? 0) as number;
+  const totalBalance =
+    (useEnvelopeSheetValue(envelopeBudget.totalBalance) ?? 0) as number;
+  const toBudget =
+    (useEnvelopeSheetValue({
+      name: envelopeBudget.toBudget,
+      value: 0,
+    }) as number) ?? 0;
+
+  const isOverbudgeted = toBudget < 0;
+
+  const incomeRemaining = totalIncomeBudget + totalIncome; // income is negative spend
 
   return (
     <View
@@ -160,27 +207,39 @@ export function MonarchSummaryPanel({
         overflowY: 'auto',
       }}
     >
-      {/* Left to budget / ToBudget card */}
+      {/* Hidden readers to aggregate income group budgets */}
+      {incomeGroups.map(g => (
+        <GroupBudgetReader key={g.id} groupId={g.id} onValue={onGroupBudget} />
+      ))}
+
+      {/* Left to budget / Overbudgeted card */}
       <View
         style={{
-          backgroundColor: theme.cardBackground,
+          backgroundColor: isOverbudgeted
+            ? '#feebec'
+            : theme.noticeBackgroundLight,
           borderRadius: 12,
-          padding: '16px 20px 20px',
+          padding: '14px 16px 16px',
           marginBottom: 12,
-          boxShadow: '0px 1px 2px rgba(34,32,29,0.08)',
           flexShrink: 0,
+          boxShadow: '0px 1px 2px rgba(34,32,29,0.08)',
         }}
       >
-        {/* Card header: title + menu button */}
         <View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 12,
+            marginBottom: 8,
           }}
         >
-          <View style={{ fontSize: 13, fontWeight: 600, color: theme.pageText }}>
+          <View
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: isOverbudgeted ? theme.errorTextDark : theme.noticeTextDark,
+            }}
+          >
             {t('Summary')}
           </View>
           <Button
@@ -188,7 +247,12 @@ export function MonarchSummaryPanel({
             variant="bare"
             aria-label={t('Month actions')}
             onPress={() => setMenuOpen(true)}
-            style={{ padding: 4, color: theme.pageTextLight }}
+            style={{
+              padding: 4,
+              color: isOverbudgeted
+                ? theme.errorTextDark
+                : theme.noticeTextDark,
+            }}
           >
             <SvgDotsHorizontalTriple width={15} height={15} />
           </Button>
@@ -271,30 +335,34 @@ export function MonarchSummaryPanel({
           </Popover>
         </View>
 
-        {/* Interactive ToBudget amount */}
-        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ alignItems: 'center' }}>
           <ToBudget
             month={month}
             prevMonthName={prevMonthName}
             onBudgetAction={onBudgetAction}
+            amountStyle={{
+              color: isOverbudgeted ? theme.errorText : theme.noticeTextDark,
+            }}
           />
-        </View>
-
-        {/* Totals breakdown */}
-        <View
-          style={{
-            borderTop: '1px solid ' + theme.tableBorder,
-            paddingTop: 12,
-          }}
-        >
-          <TotalsList prevMonthName={prevMonthName} />
         </View>
       </View>
 
-      {/* Per-group expense cards */}
-      {expenseGroups.map(group => (
-        <GroupCard key={group.id} group={group} />
-      ))}
+      {/* Income section */}
+      <SectionCard
+        label={t('Income')}
+        budget={totalIncomeBudget}
+        actual={-totalIncome}
+        remaining={incomeRemaining}
+        invertProgress
+      />
+
+      {/* Expenses section */}
+      <SectionCard
+        label={t('Expenses')}
+        budget={-totalExpenseBudget}
+        actual={-totalSpent}
+        remaining={totalBalance}
+      />
     </View>
   );
 }
