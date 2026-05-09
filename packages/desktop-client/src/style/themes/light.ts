@@ -1,17 +1,17 @@
 import * as colorPalette from '#style/palette';
 
-export const pageBackground = colorPalette.navy100;
-export const pageBackgroundModalActive = colorPalette.navy200;
-export const pageBackgroundTopLeft = colorPalette.navy100;
-export const pageBackgroundBottomRight = colorPalette.blue150;
+export const pageBackground = '#f5f7fa';
+export const pageBackgroundModalActive = '#e8ebf0';
+export const pageBackgroundTopLeft = '#f5f7fa';
+export const pageBackgroundBottomRight = '#e8f4f2';
 export const pageBackgroundLineTop = colorPalette.white;
-export const pageBackgroundLineMid = colorPalette.navy100;
-export const pageBackgroundLineBottom = colorPalette.blue150;
+export const pageBackgroundLineMid = '#f0f2f5';
+export const pageBackgroundLineBottom = '#d4eee9';
 export const pageText = '#272630';
 export const pageTextLight = colorPalette.navy500;
 export const pageTextSubdued = colorPalette.navy300;
 export const pageTextDark = colorPalette.navy800;
-export const pageTextPositive = colorPalette.purple600;
+export const pageTextPositive = colorPalette.monarchTeal600;
 export const pageTextLink = colorPalette.blue600;
 export const pageTextLinkLight = colorPalette.blue300;
 
