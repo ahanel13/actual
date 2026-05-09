@@ -134,12 +134,6 @@ const DynamicBudgetTable = ({
     >
       <View style={{ width: '100%', maxWidth }}>
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
-          <BudgetPageHeader
-            startMonth={prewarmStartMonth}
-            numMonths={numMonths}
-            monthBounds={monthBounds}
-            onMonthSelect={_onMonthSelect}
-          />
           <BudgetTable
             type={type}
             prewarmStartMonth={prewarmStartMonth}
