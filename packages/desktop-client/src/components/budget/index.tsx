@@ -1,8 +1,16 @@
 // @ts-strict-ignore
 import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { Button } from '@actual-app/components/button';
+import {
+  SvgCheveronLeft,
+  SvgCheveronRight,
+} from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
+import { Text } from '@actual-app/components/text';
+import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import * as monthUtils from '@actual-app/core/shared/months';
@@ -232,6 +240,14 @@ export function Budget() {
     );
   }
 
+  const formattedMonth = (() => {
+    const [year, month] = startMonth.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleDateString(
+      undefined,
+      { month: 'long', year: 'numeric' },
+    );
+  })();
+
   return (
     <SheetNameProvider name={monthUtils.sheetForMonth(startMonth)}>
       {/*
@@ -248,6 +264,62 @@ export function Budget() {
           overflow: 'hidden',
         }}
       >
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingBottom: 16,
+            paddingLeft: 4,
+            flexShrink: 0,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              color: theme.pageText,
+              marginRight: 12,
+            }}
+          >
+            {formattedMonth}
+          </Text>
+          <Button
+            variant="bare"
+            aria-label="Previous month"
+            onPress={() =>
+              onMonthSelect(monthUtils.prevMonth(startMonth), maxMonths)
+            }
+            style={{ padding: 4, color: theme.pageTextLight }}
+          >
+            <SvgCheveronLeft width={16} height={16} />
+          </Button>
+          <Button
+            variant="bare"
+            aria-label="Next month"
+            onPress={() =>
+              onMonthSelect(monthUtils.nextMonth(startMonth), maxMonths)
+            }
+            style={{ padding: 4, color: theme.pageTextLight }}
+          >
+            <SvgCheveronRight width={16} height={16} />
+          </Button>
+          {startMonth !== currentMonth && (
+            <Button
+              variant="bare"
+              onPress={() => onMonthSelect(currentMonth, maxMonths)}
+              style={{
+                marginLeft: 8,
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: '1px solid ' + theme.buttonNormalBorder,
+                color: theme.pageTextLight,
+                fontSize: 13,
+              }}
+            >
+              Today
+            </Button>
+          )}
+        </View>
         <View style={{ flex: 1 }}>{table}</View>
       </View>
     </SheetNameProvider>
