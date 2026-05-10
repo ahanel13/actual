@@ -190,7 +190,7 @@ const TransactionHeader = memo(
     return (
       <Row
         style={{
-          fontWeight: 300,
+          fontWeight: 500,
           zIndex: 200,
           color: theme.tableHeaderText,
           backgroundColor: theme.tableHeaderBackground,
@@ -290,25 +290,14 @@ const TransactionHeader = memo(
           />
         )}
         <HeaderCell
-          value={t('Payment')}
-          width={100}
+          value={t('Amount')}
+          width={110}
           alignItems="flex-end"
           marginRight={-5}
-          id="payment"
-          icon={field === 'payment' ? ascDesc : 'clickable'}
+          id="amount"
+          icon={field === 'amount' ? ascDesc : 'clickable'}
           onClick={() =>
-            onSort('payment', selectAscDesc(field, ascDesc, 'payment', 'asc'))
-          }
-        />
-        <HeaderCell
-          value={t('Deposit')}
-          width={100}
-          alignItems="flex-end"
-          marginRight={-5}
-          id="deposit"
-          icon={field === 'deposit' ? ascDesc : 'clickable'}
-          onClick={() =>
-            onSort('deposit', selectAscDesc(field, ascDesc, 'deposit', 'desc'))
+            onSort('amount', selectAscDesc(field, ascDesc, 'amount', 'asc'))
           }
         />
         {showBalance && (
@@ -1782,60 +1771,52 @@ const Transaction = memo(function Transaction({
         )}
 
         <InputCell
-          /* Debit field for all transactions */
+          /* Single amount field — positive = green, negative = default text */
           type="input"
-          width={100}
-          name="debit"
-          exposed={focusedField === 'debit'}
-          focused={focusedField === 'debit'}
-          value={debit === '' && credit === '' ? amountToCurrency(0) : debit}
+          width={110}
+          name={credit !== '' ? 'credit' : 'debit'}
+          exposed={focusedField === 'debit' || focusedField === 'credit'}
+          focused={focusedField === 'debit' || focusedField === 'credit'}
+          value={
+            credit !== ''
+              ? credit
+              : debit !== ''
+                ? `-${debit}`
+                : amountToCurrency(0)
+          }
           formatter={value =>
-            // reformat value so since we might have kept decimals
             value ? amountToCurrency(currencyToAmount(value) || 0) : ''
           }
-          valueStyle={valueStyle}
+          valueStyle={{
+            ...valueStyle,
+            color:
+              transaction.amount > 0
+                ? theme.numberPositive
+                : theme.pageText,
+          }}
           textAlign="right"
-          title={debit}
-          onExpose={name => !isPreview && onEdit(id, name)}
+          title={credit !== '' ? credit : debit}
+          onExpose={name => !isPreview && onEdit(id, credit !== '' ? 'credit' : 'debit')}
           style={{
             ...(isParent && { fontStyle: 'italic' }),
             ...styles.tnum,
             ...amountStyle,
           }}
           inputProps={{
-            value: debit === '' && credit === '' ? amountToCurrency(0) : debit,
-            onUpdate: onUpdate.bind(null, 'debit'),
-            'data-1p-ignore': true,
-          }}
-          privacyFilter={{
-            activationFilters: [!isTemporaryId(transaction.id)],
-          }}
-        />
-
-        <InputCell
-          /* Credit field for all transactions */
-          type="input"
-          width={100}
-          name="credit"
-          exposed={focusedField === 'credit'}
-          focused={focusedField === 'credit'}
-          value={credit}
-          formatter={value =>
-            // reformat value so since we might have kept decimals
-            value ? amountToCurrency(currencyToAmount(value) || 0) : ''
-          }
-          valueStyle={valueStyle}
-          textAlign="right"
-          title={credit}
-          onExpose={name => !isPreview && onEdit(id, name)}
-          style={{
-            ...(isParent && { fontStyle: 'italic' }),
-            ...styles.tnum,
-            ...amountStyle,
-          }}
-          inputProps={{
-            value: credit,
-            onUpdate: onUpdate.bind(null, 'credit'),
+            value:
+              credit !== ''
+                ? credit
+                : debit !== ''
+                  ? `-${debit}`
+                  : amountToCurrency(0),
+            onUpdate: (value: string) => {
+              const num = currencyToAmount(value) || 0;
+              if (num >= 0) {
+                onUpdate('credit', amountToCurrency(num));
+              } else {
+                onUpdate('debit', amountToCurrency(-num));
+              }
+            },
             'data-1p-ignore': true,
           }}
           privacyFilter={{
@@ -2924,7 +2905,6 @@ export const TransactionTable = forwardRef(
         'notes',
         'category',
         'debit',
-        'credit',
         'cleared',
         'cancel',
         'add',
@@ -2942,7 +2922,6 @@ export const TransactionTable = forwardRef(
         'notes',
         'category',
         'debit',
-        'credit',
         'cleared',
       ];
 
@@ -2951,7 +2930,7 @@ export const TransactionTable = forwardRef(
 
     function getFields(item: TransactionEntity | undefined, fields: string[]) {
       fields = item?.is_child
-        ? ['select', 'payee', 'notes', 'category', 'debit', 'credit']
+        ? ['select', 'payee', 'notes', 'category', 'debit']
         : fields.filter(
             f =>
               (props.showAccount || f !== 'account') &&
