@@ -103,5 +103,5 @@ app.post('/quote', async (req, res) => {
     .map(r => (r.status === 'fulfilled' ? r.value : null))
     .filter(Boolean);
 
-  res.json({ quotes });
+  res.json({ status: 'ok', data: { quotes } });
 });
