@@ -42,11 +42,9 @@ export function BalanceHistoryGraph({
   >([]);
   const [loading, setLoading] = useState(true);
 
-  // Snapshot-based path: only for full (non-compact) single-account view
-  const { data: snapshots = [] } = useBalanceHistory(
-    !compact && accountId ? accountId : undefined,
-  );
-  const hasSnapshots = !compact && accountId != null && snapshots.length > 0;
+  // Snapshot-based path: use balance_history when available
+  const { data: snapshots = [] } = useBalanceHistory(accountId ?? undefined);
+  const hasSnapshots = accountId != null && snapshots.length > 0;
   const [hoveredValue, setHoveredValue] = useState<{
     date: string;
     balance: number;
@@ -153,7 +151,7 @@ export function BalanceHistoryGraph({
       startingBalanceLive?.unsubscribe();
       monthlyTotalsLive?.unsubscribe();
     };
-  }, [accountId, locale]);
+  }, [accountId, locale, hasSnapshots]);
 
   // Process data when both startingBalance and monthlyTotals are available (transaction path)
   useEffect(() => {
