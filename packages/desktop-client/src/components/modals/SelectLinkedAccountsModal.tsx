@@ -25,6 +25,7 @@ import {
   useLinkAccountSimpleFinMutation,
   useUnlinkAccountMutation,
 } from '#accounts';
+import type { AccountType } from '@actual-app/core/types/models';
 import { Autocomplete } from '#components/autocomplete/Autocomplete';
 import type { AutocompleteItem } from '#components/autocomplete/Autocomplete';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
@@ -173,6 +174,9 @@ export function SelectLinkedAccountsModal({
   const [customStartingDates, setCustomStartingDates] = useState<
     Record<string, StartingBalanceInfo>
   >({});
+  const [accountTypes, setAccountTypes] = useState<
+    Record<string, AccountType | undefined>
+  >({});
   const { addOnBudgetAccountOption, addOffBudgetAccountOption } =
     useAddBudgetAccountOptions();
 
@@ -215,6 +219,14 @@ export function SelectLinkedAccountsModal({
         const startingBalance =
           customSettings?.amount != null ? customSettings.amount : undefined;
 
+        const accountType = isNewAccountOption(
+          chosenLocalAccountId,
+          addOnBudgetAccountOption.id,
+          addOffBudgetAccountOption.id,
+        )
+          ? accountTypes[chosenExternalAccountId]
+          : undefined;
+
         if (propsWithSortedExternalAccounts.syncSource === 'simpleFin') {
           linkAccountSimpleFin.mutate({
             externalAccount:
@@ -227,6 +239,7 @@ export function SelectLinkedAccountsModal({
                 ? chosenLocalAccountId
                 : undefined,
             offBudget,
+            type: accountType,
             startingDate,
             startingBalance,
           });
@@ -242,6 +255,7 @@ export function SelectLinkedAccountsModal({
                 ? chosenLocalAccountId
                 : undefined,
             offBudget,
+            type: accountType,
             startingDate,
             startingBalance,
           });
@@ -258,6 +272,7 @@ export function SelectLinkedAccountsModal({
                 ? chosenLocalAccountId
                 : undefined,
             offBudget,
+            type: accountType,
             startingDate,
             startingBalance,
           });
@@ -339,6 +354,13 @@ export function SelectLinkedAccountsModal({
     }));
   };
 
+  const setAccountType = (
+    accountId: string,
+    type: AccountType | undefined,
+  ) => {
+    setAccountTypes(prev => ({ ...prev, [accountId]: type }));
+  };
+
   const label = useMemo(() => {
     const s = new Set(draftLinkAccounts.values());
     if (s.has('linking') && s.has('unlinking')) {
@@ -408,7 +430,9 @@ export function SelectLinkedAccountsModal({
                   externalAccount={account}
                   chosenAccount={getChosenAccount(account.account_id)}
                   unlinkedAccounts={unlinkedAccounts}
+                  accountType={accountTypes[account.account_id]}
                   onSetLinkedAccount={onSetLinkedAccount}
+                  onSetAccountType={setAccountType}
                   customStartingDate={getCustomStartingDate(account.account_id)}
                   onSetCustomStartingDate={setCustomStartingDate}
                 />
@@ -423,6 +447,7 @@ export function SelectLinkedAccountsModal({
                 <Cell value={t('Bank Account To Sync')} width={150} />
                 <Cell value={t('Balance')} width={120} />
                 <Cell value={t('Account in Actual')} width="flex" />
+                <Cell value={t('Account Type')} width={130} />
                 <Cell value={t('Starting Date')} width={120} />
                 <Cell value={t('Starting Balance')} width={120} />
                 <Cell value={t('Actions')} width={150} textAlign="center" />
@@ -448,7 +473,9 @@ export function SelectLinkedAccountsModal({
                       externalAccount={item}
                       chosenAccount={chosenAccount}
                       unlinkedAccounts={unlinkedAccounts}
+                      accountType={accountTypes[item.account_id]}
                       onSetLinkedAccount={onSetLinkedAccount}
+                      onSetAccountType={setAccountType}
                       customStartingDate={getCustomStartingDate(
                         item.account_id,
                       )}
@@ -507,14 +534,29 @@ type StartingBalanceInfo = {
   amount: number;
 };
 
+const ACCOUNT_TYPE_OPTIONS: Array<{ value: AccountType; label: string }> = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'investment', label: 'Investments' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'vehicle', label: 'Vehicles' },
+  { value: 'valuables', label: 'Valuables' },
+  { value: 'other_asset', label: 'Other Assets' },
+  { value: 'credit_card', label: 'Credit Card' },
+  { value: 'mortgage', label: 'Mortgage' },
+  { value: 'loan', label: 'Loan' },
+  { value: 'other_liability', label: 'Other Liability' },
+];
+
 type SharedAccountRowProps = {
   externalAccount: ExternalAccount;
   chosenAccount: { id: string; name: string } | undefined;
   unlinkedAccounts: AccountEntity[];
+  accountType: AccountType | undefined;
   onSetLinkedAccount: (
     externalAccount: ExternalAccount,
     localAccountId: string | null | undefined,
   ) => void;
+  onSetAccountType: (accountId: string, type: AccountType | undefined) => void;
 };
 
 function getAvailableAccountOptions(
@@ -542,6 +584,14 @@ type TableRowProps = SharedAccountRowProps & {
     settings: StartingBalanceInfo,
   ) => void;
   showStartingOptions: boolean;
+};
+
+type AccountCardProps = SharedAccountRowProps & {
+  customStartingDate: StartingBalanceInfo;
+  onSetCustomStartingDate: (
+    accountId: string,
+    settings: StartingBalanceInfo,
+  ) => void;
 };
 
 function useStartingBalanceInfo(accountId: string | undefined) {
@@ -579,7 +629,9 @@ function TableRow({
   externalAccount,
   chosenAccount,
   unlinkedAccounts,
+  accountType,
   onSetLinkedAccount,
+  onSetAccountType,
   customStartingDate,
   onSetCustomStartingDate,
   showStartingOptions,
@@ -667,6 +719,37 @@ function TableRow({
           chosenAccount?.name
         )}
       </Field>
+      {/* Account Type */}
+      <Field width={130} truncate={false}>
+        {showStartingOptions ? (
+          <select
+            value={accountType ?? ''}
+            onChange={e =>
+              onSetAccountType(
+                externalAccount.account_id,
+                (e.target.value as AccountType) || undefined,
+              )
+            }
+            style={{
+              width: '100%',
+              fontSize: 13,
+              padding: '3px 4px',
+              borderRadius: 4,
+              border: `1px solid ${theme.tableBorder}`,
+              backgroundColor: theme.tableBackground,
+              color: theme.pageText,
+            }}
+          >
+            <option value="">Default</option>
+            {ACCOUNT_TYPE_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </Field>
+
       {showStartingOptions ? (
         <StartingOptionsFields
           accountId={externalAccount.account_id}
@@ -862,19 +945,13 @@ function StartingOptionsFields({
   );
 }
 
-type AccountCardProps = SharedAccountRowProps & {
-  customStartingDate: StartingBalanceInfo;
-  onSetCustomStartingDate: (
-    accountId: string,
-    settings: StartingBalanceInfo,
-  ) => void;
-};
-
 function AccountCard({
   externalAccount,
   chosenAccount,
   unlinkedAccounts,
+  accountType,
   onSetLinkedAccount,
+  onSetAccountType,
   customStartingDate,
   onSetCustomStartingDate,
 }: AccountCardProps) {
@@ -1040,13 +1117,45 @@ function AccountCard({
       )}
 
       {shouldShowStartingOptions && (
-        <StartingOptionsFields
-          accountId={externalAccount.account_id}
-          externalBalance={externalAccount.balance}
-          customStartingDate={customStartingDate}
-          onSetCustomStartingDate={onSetCustomStartingDate}
-          layout="stacked"
-        />
+        <>
+          <View>
+            <Text style={{ marginBottom: 4, fontSize: 13, color: theme.pageTextSubdued }}>
+              <Trans>Account type:</Trans>
+            </Text>
+            <select
+              value={accountType ?? ''}
+              onChange={e =>
+                onSetAccountType(
+                  externalAccount.account_id,
+                  (e.target.value as AccountType) || undefined,
+                )
+              }
+              style={{
+                width: '100%',
+                fontSize: 13,
+                padding: '6px 8px',
+                borderRadius: 4,
+                border: `1px solid ${theme.tableBorder}`,
+                backgroundColor: theme.tableBackground,
+                color: theme.pageText,
+              }}
+            >
+              <option value="">Default (checking/savings)</option>
+              {ACCOUNT_TYPE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </View>
+          <StartingOptionsFields
+            accountId={externalAccount.account_id}
+            externalBalance={externalAccount.balance}
+            customStartingDate={customStartingDate}
+            onSetCustomStartingDate={onSetCustomStartingDate}
+            layout="stacked"
+          />
+        </>
       )}
 
       {chosenAccount ? (
