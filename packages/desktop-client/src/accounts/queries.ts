@@ -40,6 +40,20 @@ export const accountQueries = {
     queryOptions<AccountEntity[]>({
       ...accountQueries.list(),
       select: accounts =>
-        selectActive(accounts).filter(account => !!account.offbudget),
+        selectActive(accounts).filter(
+          account => !!account.offbudget && account.type !== 'investment',
+        ),
+    }),
+  listInvestment: () =>
+    queryOptions<AccountEntity[]>({
+      ...accountQueries.list(),
+      select: accounts =>
+        selectActive(accounts).filter(account => account.type === 'investment'),
+    }),
+  listByType: (type: import('@actual-app/core/types/models').AccountType) =>
+    queryOptions<AccountEntity[]>({
+      ...accountQueries.list(),
+      select: accounts =>
+        selectActive(accounts).filter(account => account.type === type),
     }),
 };

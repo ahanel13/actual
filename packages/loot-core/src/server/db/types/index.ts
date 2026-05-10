@@ -18,7 +18,7 @@ export type DbAccount = {
   balance_limit?: number | null;
   mask?: string | null;
   official_name?: string | null;
-  type?: string | null;
+  type?: import('#types/models').AccountType | null;
   subtype?: string | null;
   bank?: string | null;
   account_sync_source?: 'simpleFin' | 'goCardless' | null;
@@ -341,4 +341,22 @@ export type DbTag = {
   color?: string | null;
   description?: string | null;
   tombstone: 1 | 0;
+};
+
+export type DbHolding = {
+  id: string;
+  account_id: string;
+  symbol: string;
+  name?: string | null;
+  shares: number;
+  cost_basis_per_share?: number | null;
+  currency: string;
+  tombstone: 1 | 0;
+};
+
+export type DbPriceCache = {
+  symbol: string;
+  price: number;
+  currency: string;
+  fetched_at: string;
 };
