@@ -778,6 +778,7 @@ class AccountInternal extends PureComponent<
       | 'reopen'
       | 'export'
       | 'change-type'
+      | 'import-balance-history'
       | 'toggle-balance'
       | 'remove-sorting'
       | 'toggle-cleared'
@@ -829,6 +830,16 @@ class AccountInternal extends PureComponent<
           pushModal({
             modal: {
               name: 'edit-account-type',
+              options: { accountId },
+            },
+          }),
+        );
+        break;
+      case 'import-balance-history':
+        this.props.dispatch(
+          pushModal({
+            modal: {
+              name: 'import-balance-history',
               options: { accountId },
             },
           }),

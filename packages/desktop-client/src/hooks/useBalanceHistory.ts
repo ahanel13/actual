@@ -6,10 +6,12 @@ export function balanceHistoryQueryKey(accountId: string) {
   return ['balance-history', accountId];
 }
 
-export function useBalanceHistory(accountId: string) {
-  return useQuery<BalanceHistoryEntity[]>({
-    queryKey: balanceHistoryQueryKey(accountId),
-    queryFn: () => send('balance-history-get', { accountId }),
+export function useBalanceHistory(accountId: string | undefined) {
+  return useQuery({
+    queryKey: balanceHistoryQueryKey(accountId ?? ''),
+    queryFn: (): Promise<BalanceHistoryEntity[]> =>
+      send('balance-history-get', { accountId: accountId! }),
     staleTime: Infinity,
+    enabled: !!accountId,
   });
 }

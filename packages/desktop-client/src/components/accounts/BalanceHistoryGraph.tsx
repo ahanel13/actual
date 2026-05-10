@@ -42,9 +42,11 @@ export function BalanceHistoryGraph({
   >([]);
   const [loading, setLoading] = useState(true);
 
-  // Snapshot-based path: if this account has balance_history entries, use them
-  const { data: snapshots = [] } = useBalanceHistory(accountId ?? '');
-  const hasSnapshots = accountId != null && snapshots.length > 0;
+  // Snapshot-based path: only for full (non-compact) single-account view
+  const { data: snapshots = [] } = useBalanceHistory(
+    !compact && accountId ? accountId : undefined,
+  );
+  const hasSnapshots = !compact && accountId != null && snapshots.length > 0;
   const [hoveredValue, setHoveredValue] = useState<{
     date: string;
     balance: number;

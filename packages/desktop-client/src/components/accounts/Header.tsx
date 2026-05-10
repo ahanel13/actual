@@ -52,7 +52,6 @@ import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 import type { TableRef } from './Account';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
-import { BalanceHistoryManager } from '#components/accounts/BalanceHistoryManager';
 import { HoldingsTable } from '#components/investments/HoldingsTable';
 
 import { ReconcileMenu, ReconcilingMessage } from './Reconcile';
@@ -355,12 +354,6 @@ export function AccountHeader({
             <HoldingsTable accountId={accountId} />
           )}
 
-          {accountId && (
-            <BalanceHistoryManager
-              accountId={accountId}
-              accountName={account?.name}
-            />
-          )}
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>
           {canSync && (
@@ -776,6 +769,7 @@ type AccountMenuProps = {
       | 'reopen'
       | 'export'
       | 'change-type'
+      | 'import-balance-history'
       | 'toggle-balance'
       | 'remove-sorting'
       | 'toggle-cleared'
@@ -842,6 +836,7 @@ function AccountMenu({
             : t('Show reconciled transactions'),
         },
         { name: 'export', text: t('Export') },
+        { name: 'import-balance-history', text: t('Import balance history') },
         { name: 'change-type', text: t('Change account type') },
         ...(account && !account.closed
           ? canSync
