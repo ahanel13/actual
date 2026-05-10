@@ -69,6 +69,12 @@ export type Modal =
       };
     }
   | {
+      name: 'import-balance-history';
+      options: {
+        accountId: string;
+      };
+    }
+  | {
       name: 'close-account';
       options: {
         account: AccountEntity;

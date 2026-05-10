@@ -22,3 +22,4 @@ export type * from './user';
 export type * from './user-access';
 export type * from './tags';
 export type * from './holding';
+export type * from './balance-history';

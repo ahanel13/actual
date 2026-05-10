@@ -15,6 +15,7 @@ import { Area, AreaChart, Tooltip as RechartsTooltip, YAxis } from 'recharts';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useRechartsAnimation } from '#components/reports/chart-theme';
 import { LoadingIndicator } from '#components/reports/LoadingIndicator';
+import { useBalanceHistory } from '#hooks/useBalanceHistory';
 import { useLocale } from '#hooks/useLocale';
 import * as query from '#queries';
 import { liveQuery } from '#queries/liveQuery';
@@ -40,6 +41,10 @@ export function BalanceHistoryGraph({
     Array<{ date: string; balance: number }>
   >([]);
   const [loading, setLoading] = useState(true);
+
+  // Snapshot-based path: if this account has balance_history entries, use them
+  const { data: snapshots = [] } = useBalanceHistory(accountId ?? '');
+  const hasSnapshots = accountId != null && snapshots.length > 0;
   const [hoveredValue, setHoveredValue] = useState<{
     date: string;
     balance: number;
@@ -62,7 +67,31 @@ export function BalanceHistoryGraph({
     [percentageChange],
   );
 
+  // Snapshot-based processing: group by month, take last snapshot per month
   useEffect(() => {
+    if (!hasSnapshots) return;
+
+    const monthMap = new Map<string, number>();
+    for (const s of snapshots) {
+      const month = s.date.slice(0, 7); // YYYY-MM
+      monthMap.set(month, s.balance);
+    }
+
+    const balances = Array.from(monthMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, balance]) => ({
+        date: monthUtils.format(month, 'MMM yyyy', locale),
+        balance,
+      }));
+
+    setBalanceData(balances);
+    setHoveredValue(balances[balances.length - 1] ?? null);
+    setLoading(false);
+  }, [hasSnapshots, snapshots, locale]);
+
+  useEffect(() => {
+    if (hasSnapshots) return; // snapshot path handles rendering
+
     // Reset state when accountId changes
     setStartingBalance(null);
     setMonthlyTotals(null);
@@ -124,8 +153,9 @@ export function BalanceHistoryGraph({
     };
   }, [accountId, locale]);
 
-  // Process data when both startingBalance and monthlyTotals are available
+  // Process data when both startingBalance and monthlyTotals are available (transaction path)
   useEffect(() => {
+    if (hasSnapshots) return;
     if (startingBalance !== null && monthlyTotals !== null) {
       const endDate = new Date();
       const startDate = subMonths(endDate, 12);

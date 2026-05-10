@@ -33,6 +33,7 @@ import { CreateAccountModal } from './modals/CreateAccountModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
 import { AddEditHoldingModal } from './modals/AddEditHoldingModal';
+import { ImportBalanceHistoryModal } from './modals/ImportBalanceHistoryModal';
 import { EditAccountTypeModal } from './modals/EditAccountTypeModal';
 import { EditUserAccess } from './modals/EditAccess';
 import { EditFieldModal } from './modals/EditFieldModal';
@@ -139,6 +140,9 @@ export function Modals() {
 
         case 'add-edit-holding':
           return <AddEditHoldingModal key={key} {...modal.options} />;
+
+        case 'import-balance-history':
+          return <ImportBalanceHistoryModal key={key} {...modal.options} />;
 
         case 'close-account':
           return <CloseAccountModal key={key} {...modal.options} />;

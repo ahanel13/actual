@@ -52,6 +52,7 @@ import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 import type { TableRef } from './Account';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
+import { BalanceHistoryManager } from '#components/accounts/BalanceHistoryManager';
 import { HoldingsTable } from '#components/investments/HoldingsTable';
 
 import { ReconcileMenu, ReconcilingMessage } from './Reconcile';
@@ -352,6 +353,13 @@ export function AccountHeader({
 
           {accountId && account?.type === 'investment' && (
             <HoldingsTable accountId={accountId} />
+          )}
+
+          {accountId && (
+            <BalanceHistoryManager
+              accountId={accountId}
+              accountName={account?.name}
+            />
           )}
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>

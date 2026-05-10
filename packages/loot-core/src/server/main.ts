@@ -35,6 +35,7 @@ import { getServer, setServer } from './server-config';
 import { app as spreadsheetApp } from './spreadsheet/app';
 import { fullSync, setSyncingMode } from './sync';
 import { app as syncApp } from './sync/app';
+import { app as balanceHistoryApp } from './balance-history/app';
 import { app as investmentsApp } from './investments/app';
 import { app as tagsApp } from './tags/app';
 import { app as toolsApp } from './tools/app';
@@ -148,6 +149,7 @@ app.combine(
   encryptionApp,
   tagsApp,
   investmentsApp,
+  balanceHistoryApp,
 );
 
 export function getDefaultDocumentDir() {
