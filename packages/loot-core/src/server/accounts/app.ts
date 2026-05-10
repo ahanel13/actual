@@ -43,6 +43,7 @@ import * as bankSync from './sync';
 type LinkAccountBaseParams = {
   upgradingId?: AccountEntity['id'];
   offBudget?: boolean;
+  type?: AccountEntity['type'];
   startingDate?: string;
   startingBalance?: number;
 };
@@ -79,12 +80,14 @@ export type AccountHandlers = {
 async function updateAccount({
   id,
   name,
+  type,
   last_reconciled,
 }: Pick<AccountEntity, 'id' | 'name'> &
-  Partial<Pick<AccountEntity, 'last_reconciled'>>) {
+  Partial<Pick<AccountEntity, 'type' | 'last_reconciled'>>) {
   await db.update('accounts', {
     id,
     name,
+    ...(type !== undefined && { type: type ?? null }),
     ...(last_reconciled && { last_reconciled }),
   });
   return {};
@@ -113,6 +116,7 @@ async function getAccounts(): Promise<AccountEntity[]> {
         balance_limit: dbAccount.balance_limit ?? null,
         account_sync_source: dbAccount.account_sync_source ?? null,
         last_sync: dbAccount.last_sync ?? null,
+        type: dbAccount.type ?? null,
       }) satisfies AccountEntity,
   );
 }
@@ -152,6 +156,7 @@ async function linkGoCardlessAccount({
   account,
   upgradingId,
   offBudget = false,
+  type,
   startingDate,
   startingBalance,
 }: LinkAccountBaseParams & {
@@ -188,6 +193,7 @@ async function linkGoCardlessAccount({
       official_name: account.official_name,
       bank: bank.id,
       offbudget: offBudget ? 1 : 0,
+      type: type ?? null,
       account_sync_source: 'goCardless',
     });
     await db.insertPayee({
@@ -220,6 +226,7 @@ async function linkSimpleFinAccount({
   externalAccount,
   upgradingId,
   offBudget = false,
+  type,
   startingDate,
   startingBalance,
 }: LinkAccountBaseParams & {
@@ -262,6 +269,7 @@ async function linkSimpleFinAccount({
       official_name: externalAccount.name,
       bank: bank.id,
       offbudget: offBudget ? 1 : 0,
+      type: type ?? null,
       account_sync_source: 'simpleFin',
     });
     await db.insertPayee({
@@ -294,6 +302,7 @@ async function linkPluggyAiAccount({
   externalAccount,
   upgradingId,
   offBudget = false,
+  type,
   startingDate,
   startingBalance,
 }: LinkAccountBaseParams & {
@@ -336,6 +345,7 @@ async function linkPluggyAiAccount({
       official_name: externalAccount.name,
       bank: bank.id,
       offbudget: offBudget ? 1 : 0,
+      type: type ?? null,
       account_sync_source: 'pluggyai',
     });
     await db.insertPayee({
@@ -366,17 +376,20 @@ async function linkPluggyAiAccount({
 
 async function createAccount({
   name,
+  type,
   balance = 0,
   offBudget = false,
   closed = false,
 }: {
   name: string;
+  type?: AccountEntity['type'];
   balance?: number | undefined;
   offBudget?: boolean | undefined;
   closed?: boolean | undefined;
 }) {
   const id: AccountEntity['id'] = await db.insertAccount({
     name,
+    type: type ?? null,
     offbudget: offBudget ? 1 : 0,
     closed: closed ? 1 : 0,
   });

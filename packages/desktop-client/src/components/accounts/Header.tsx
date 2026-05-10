@@ -281,6 +281,15 @@ export function AccountHeader({
       <View style={{ ...styles.pageContent, paddingBottom: 10, flexShrink: 0 }}>
         <View
           style={{
+            backgroundColor: theme.cardBackground,
+            borderRadius: 12,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            padding: '16px 20px',
+            marginBottom: 8,
+          }}
+        >
+        <View
+          style={{
             flexDirection: 'column',
             marginTop: 2,
             justifyContent: 'space-between',
@@ -327,15 +336,17 @@ export function AccountHeader({
             />
           </View>
 
-          <BalanceHistoryGraph
-            ref={graphRef}
-            accountId={accountId}
-            style={{
-              height: 'calc(5vh + 5vw)',
-              margin: 0,
-              display: showNetWorthChart ? 'flex' : 'none',
-            }}
-          />
+          {accountId && (
+            <BalanceHistoryGraph
+              ref={graphRef}
+              accountId={accountId}
+              style={{
+                height: 'calc(5vh + 5vw)',
+                margin: 0,
+                display: showNetWorthChart ? 'flex' : 'none',
+              }}
+            />
+          )}
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>
           {canSync && (
@@ -577,6 +588,7 @@ export function AccountHeader({
             onConditionsOpChange={onConditionsOpChange}
           />
         )}
+        </View>
       </View>
       {reconcileAmount != null && (
         <ReconcilingMessage
@@ -749,6 +761,7 @@ type AccountMenuProps = {
       | 'close'
       | 'reopen'
       | 'export'
+      | 'change-type'
       | 'toggle-balance'
       | 'remove-sorting'
       | 'toggle-cleared'
@@ -815,6 +828,7 @@ function AccountMenu({
             : t('Show reconciled transactions'),
         },
         { name: 'export', text: t('Export') },
+        { name: 'change-type', text: t('Change account type') },
         ...(account && !account.closed
           ? canSync
             ? [

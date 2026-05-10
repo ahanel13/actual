@@ -34,15 +34,15 @@ import { useDragRef } from '#hooks/useDragRef';
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useNotes } from '#hooks/useNotes';
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { openAccountCloseModal } from '#modals/modalsSlice';
+import { openAccountCloseModal, pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 import type { Binding, SheetFields } from '#spreadsheet';
 
 export const accountNameStyle: CSSProperties = {
   marginTop: 1,
   marginBottom: 1,
-  paddingTop: 5,
-  paddingBottom: 5,
+  paddingTop: 6,
+  paddingBottom: 6,
   paddingRight: 12,
   paddingLeft: 10,
   borderRadius: 8,
@@ -196,7 +196,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
             <AlignedText
               style={
                 titleAccount && {
-                  borderBottom: `1.5px solid rgba(255,255,255,0.4)`,
+                  borderBottom: `1px solid ${theme.sidebarItemBackgroundHover}`,
                   paddingBottom: '3px',
                 }
               }
@@ -264,6 +264,17 @@ export function Account<FieldName extends SheetFields<'account'>>({
                       setIsEditing(true);
                       break;
                     }
+                    case 'change-type': {
+                      dispatch(
+                        pushModal({
+                          modal: {
+                            name: 'edit-account-type',
+                            options: { accountId: account.id },
+                          },
+                        }),
+                      );
+                      break;
+                    }
                     default: {
                       throw new Error(
                         `Unrecognized menu option: ${String(type)}`,
@@ -274,6 +285,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
                 }}
                 items={[
                   { name: 'rename', text: t('Rename') },
+                  { name: 'change-type', text: t('Change account type') },
                   account.closed
                     ? { name: 'reopen', text: t('Reopen') }
                     : { name: 'close', text: t('Close') },

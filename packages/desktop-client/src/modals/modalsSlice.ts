@@ -56,6 +56,12 @@ export type Modal =
       name: 'add-local-account';
     }
   | {
+      name: 'edit-account-type';
+      options: {
+        accountId: string;
+      };
+    }
+  | {
       name: 'close-account';
       options: {
         account: AccountEntity;

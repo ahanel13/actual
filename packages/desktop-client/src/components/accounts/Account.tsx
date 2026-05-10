@@ -777,6 +777,7 @@ class AccountInternal extends PureComponent<
       | 'close'
       | 'reopen'
       | 'export'
+      | 'change-type'
       | 'toggle-balance'
       | 'remove-sorting'
       | 'toggle-cleared'
@@ -822,6 +823,16 @@ class AccountInternal extends PureComponent<
         break;
       case 'reopen':
         this.props.onReopenAccount(accountId);
+        break;
+      case 'change-type':
+        this.props.dispatch(
+          pushModal({
+            modal: {
+              name: 'edit-account-type',
+              options: { accountId },
+            },
+          }),
+        );
         break;
       case 'export':
         const accountName = this.getAccountTitle(account, accountId);
