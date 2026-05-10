@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  SvgChartPie,
   SvgCog,
   SvgCreditCard,
   SvgReports,
@@ -10,7 +11,7 @@ import {
   SvgTuning,
   SvgWallet,
 } from '@actual-app/components/icons/v1';
-import { SvgCalendar3 } from '@actual-app/components/icons/v2';
+import { SvgCalendar3, SvgNotesPaperText } from '@actual-app/components/icons/v2';
 import { View } from '@actual-app/components/view';
 
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
@@ -27,6 +28,8 @@ export function PrimaryButtons() {
   return (
     <View style={{ flexShrink: 0 }}>
       <Item title={t('Budget')} Icon={SvgWallet} to="/budget" />
+      <Item title={t('Accounts')} Icon={SvgChartPie} to="/accounts" />
+      <Item title={t('Transactions')} Icon={SvgNotesPaperText} to="/transactions" />
       <Item title={t('Reports')} Icon={SvgReports} to="/reports" />
       <Item title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
       <Item title={t('Payees')} Icon={SvgStoreFront} to="/payees" />

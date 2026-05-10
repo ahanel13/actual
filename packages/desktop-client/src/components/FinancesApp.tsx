@@ -339,6 +339,11 @@ export function FinancesApp() {
                 />
 
                 <Route
+                  path="/transactions"
+                  element={<NarrowAlternate name="Transactions" />}
+                />
+
+                <Route
                   path="/accounts/:id"
                   element={<NarrowAlternate name="Account" />}
                 />

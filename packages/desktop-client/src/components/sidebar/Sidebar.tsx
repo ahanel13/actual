@@ -19,7 +19,6 @@ import { useResizeObserver } from '#hooks/useResizeObserver';
 import { replaceModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
-import { Accounts } from './Accounts';
 import { BudgetName } from './BudgetName';
 import { PrimaryButtons } from './PrimaryButtons';
 import { SecondaryButtons } from './SecondaryButtons';
@@ -123,8 +122,6 @@ export function Sidebar() {
             }}
           >
             <PrimaryButtons />
-
-            <Accounts />
 
             <SecondaryButtons
               buttons={[

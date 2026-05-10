@@ -25,12 +25,14 @@ type BalanceHistoryGraphProps = {
   accountId?: string;
   style?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
+  compact?: boolean;
 };
 
 export function BalanceHistoryGraph({
   accountId,
   style,
   ref,
+  compact = false,
 }: BalanceHistoryGraphProps) {
   const locale = useLocale();
   const animationProps = useRechartsAnimation({ isAnimationActive: false });
@@ -229,7 +231,7 @@ export function BalanceHistoryGraph({
               >
                 <AreaChart
                   data={balanceData}
-                  width={width - LABEL_WIDTH}
+                  width={compact ? width : width - LABEL_WIDTH}
                   height={height}
                 >
                   <defs>
@@ -290,36 +292,38 @@ export function BalanceHistoryGraph({
                   />
                 </AreaChart>
 
-                <SpaceBetween
-                  direction="vertical"
-                  style={{
-                    alignItems: 'flex-end',
-                    justifyContent: 'space-between',
-                    width: LABEL_WIDTH,
-                    textAlign: 'right',
-                    ...styles.verySmallText,
-                  }}
-                >
-                  {percentageChange === 0 ? (
-                    <div />
-                  ) : (
-                    <Text style={{ color }}>
-                      {percentageChange >= 0 ? '+' : ''}
-                      {percentageChange.toFixed(1)}%
-                    </Text>
-                  )}
-
-                  {hoveredValue && (
-                    <View>
-                      <Text style={{ fontWeight: 800 }}>
-                        {hoveredValue.date}
+                {!compact && (
+                  <SpaceBetween
+                    direction="vertical"
+                    style={{
+                      alignItems: 'flex-end',
+                      justifyContent: 'space-between',
+                      width: LABEL_WIDTH,
+                      textAlign: 'right',
+                      ...styles.verySmallText,
+                    }}
+                  >
+                    {percentageChange === 0 ? (
+                      <div />
+                    ) : (
+                      <Text style={{ color }}>
+                        {percentageChange >= 0 ? '+' : ''}
+                        {percentageChange.toFixed(1)}%
                       </Text>
-                      <PrivacyFilter activationFilters={[() => !isHovered]}>
-                        <Text>{integerToCurrency(hoveredValue.balance)}</Text>
-                      </PrivacyFilter>
-                    </View>
-                  )}
-                </SpaceBetween>
+                    )}
+
+                    {hoveredValue && (
+                      <View>
+                        <Text style={{ fontWeight: 800 }}>
+                          {hoveredValue.date}
+                        </Text>
+                        <PrivacyFilter activationFilters={[() => !isHovered]}>
+                          <Text>{integerToCurrency(hoveredValue.balance)}</Text>
+                        </PrivacyFilter>
+                      </View>
+                    )}
+                  </SpaceBetween>
+                )}
               </div>
             </View>
           );
