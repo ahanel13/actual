@@ -201,7 +201,7 @@ export function AccountHeader({
   const [showNetWorthChartPref, _setShowNetWorthChartPref] = useSyncedPref(
     `show-account-${accountId}-net-worth-chart`,
   );
-  const showNetWorthChart = showNetWorthChartPref === 'true';
+  const showNetWorthChart = showNetWorthChartPref !== 'false';
 
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const locale = useLocale();

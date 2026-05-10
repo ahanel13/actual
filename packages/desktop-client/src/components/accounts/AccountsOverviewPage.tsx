@@ -12,7 +12,7 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { q } from '@actual-app/core/shared/query';
-import { integerToCurrency } from '@actual-app/core/shared/util';
+
 
 import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
 import { Link } from '#components/common/Link';
@@ -68,7 +68,7 @@ function AccountBalance({
         ...style,
       }}
     >
-      {format(value, 'financial')}
+      ${format(Math.abs(value as number), 'financial')}
     </span>
   );
 }
@@ -77,7 +77,15 @@ function NetWorthBalance({ style }: { style?: React.CSSProperties }) {
   const value = useSheetValue(bindings.allAccountBalance() as any) ?? 0;
   const format = useFormat();
   return (
-    <span style={{ whiteSpace: 'nowrap', ...style }}>{format(value, 'financial')}</span>
+    <span
+      style={{
+        whiteSpace: 'nowrap',
+        color: (value as number) < 0 ? theme.errorText : theme.pageText,
+        ...style,
+      }}
+    >
+      ${format(Math.abs(value as number), 'financial')}
+    </span>
   );
 }
 
@@ -415,7 +423,7 @@ function SummaryGroupRow({ group }: { group: AccountGroup }) {
         <Trans>{group.label}</Trans>
       </View>
       <View style={{ fontSize: 13, fontWeight: 500, color: theme.pageText }}>
-        {format(Math.abs(balance), 'financial')}
+        ${format(Math.abs(balance), 'financial')}
       </View>
     </View>
   );
@@ -427,7 +435,7 @@ function SectionTotal({ groups, isLiability }: { groups: AccountGroup[]; isLiabi
   const format = useFormat();
   return (
     <View style={{ fontSize: 13, fontWeight: 700, color: theme.pageText }}>
-      {format(Math.abs(total), 'financial')}
+      ${format(Math.abs(total), 'financial')}
     </View>
   );
 }
@@ -443,6 +451,7 @@ function SummarySection({
 }) {
   const allIds = groups.flatMap(g => g.accounts.map(a => a.id));
   const total = useGroupBalance(allIds);
+  const format = useFormat();
 
   return (
     <View style={{ marginBottom: 20 }}>
@@ -458,7 +467,7 @@ function SummarySection({
           {title}
         </View>
         <View style={{ fontSize: 13, fontWeight: 700, color: theme.pageText }}>
-          {integerToCurrency(Math.abs(total))}
+          ${format(Math.abs(total), 'financial')}
         </View>
       </View>
 
