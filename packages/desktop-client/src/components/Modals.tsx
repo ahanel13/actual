@@ -32,6 +32,7 @@ import { CoverModal } from './modals/CoverModal';
 import { CreateAccountModal } from './modals/CreateAccountModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
+import { AddEditHoldingModal } from './modals/AddEditHoldingModal';
 import { EditAccountTypeModal } from './modals/EditAccountTypeModal';
 import { EditUserAccess } from './modals/EditAccess';
 import { EditFieldModal } from './modals/EditFieldModal';
@@ -135,6 +136,9 @@ export function Modals() {
 
         case 'edit-account-type':
           return <EditAccountTypeModal key={key} {...modal.options} />;
+
+        case 'add-edit-holding':
+          return <AddEditHoldingModal key={key} {...modal.options} />;
 
         case 'close-account':
           return <CloseAccountModal key={key} {...modal.options} />;

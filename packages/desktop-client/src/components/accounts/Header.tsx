@@ -52,6 +52,8 @@ import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 import type { TableRef } from './Account';
 import { Balances } from './Balance';
 import { BalanceHistoryGraph } from './BalanceHistoryGraph';
+import { HoldingsTable } from '#components/investments/HoldingsTable';
+
 import { ReconcileMenu, ReconcilingMessage } from './Reconcile';
 
 type AccountHeaderProps = {
@@ -346,6 +348,10 @@ export function AccountHeader({
                 display: showNetWorthChart ? 'flex' : 'none',
               }}
             />
+          )}
+
+          {accountId && account?.type === 'investment' && (
+            <HoldingsTable accountId={accountId} />
           )}
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12 }}>

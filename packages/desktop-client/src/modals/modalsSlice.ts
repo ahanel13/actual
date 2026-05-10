@@ -62,6 +62,13 @@ export type Modal =
       };
     }
   | {
+      name: 'add-edit-holding';
+      options: {
+        accountId: string;
+        holdingId?: string;
+      };
+    }
+  | {
       name: 'close-account';
       options: {
         account: AccountEntity;
