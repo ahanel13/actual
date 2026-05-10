@@ -31,11 +31,11 @@ export function BudgetName({ children }: BudgetNameProps) {
   return (
     <View
       style={{
-        paddingTop: 20,
-        height: 30,
+        paddingTop: 24,
+        height: 36,
         flexDirection: 'row',
         alignItems: 'center',
-        margin: '0 8px 16px 20px',
+        margin: '0 8px 20px 20px',
         userSelect: 'none',
         transition: 'padding .4s',
         ...(hasWindowButtons

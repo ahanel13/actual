@@ -230,8 +230,8 @@ export function Balances({
             <CellValueText
               {...props}
               style={{
-                fontSize: 22,
-                fontWeight: 400,
+                fontSize: 28,
+                fontWeight: 600,
                 color:
                   props.value < 0
                     ? theme.numberNegative

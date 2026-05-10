@@ -1,5 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
+import { Button } from '@actual-app/components/button';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -17,7 +19,8 @@ import { ExpenseCategory } from './ExpenseCategory';
 import { ExpenseGroup } from './ExpenseGroup';
 import { IncomeCategory } from './IncomeCategory';
 import { IncomeGroup } from './IncomeGroup';
-import { IncomeHeader } from './IncomeHeader';
+import { IncomeTotalsMonth } from './envelope/EnvelopeBudgetComponents';
+import { RenderMonths } from './RenderMonths';
 import { SidebarCategory } from './SidebarCategory';
 import { SidebarGroup } from './SidebarGroup';
 import { separateGroups } from './util';
@@ -33,12 +36,41 @@ type BudgetItem =
     }
   | { type: 'income-separator' }
   | { type: 'income-group'; value: CategoryGroupEntity }
-  | { type: 'income-category'; value: CategoryEntity };
+  | { type: 'income-category'; value: CategoryEntity }
+  | { type: 'income-total'; value: CategoryGroupEntity };
 
 type LocalDragState =
   | DragState<CategoryEntity>
   | DragState<CategoryGroupEntity>
   | null;
+
+function IncomeTotalRow({ group }: { group: CategoryGroupEntity }) {
+  const { t } = useTranslation();
+  return (
+    <Row
+      style={{
+        borderTop: '1px solid ' + theme.tableBorderSeparator,
+        backgroundColor: theme.budgetCurrentMonth,
+      }}
+    >
+      <View
+        style={{
+          paddingLeft: 14,
+          fontWeight: 700,
+          fontSize: 12,
+          color: theme.pageText,
+          justifyContent: 'center',
+          flex: '0 0 200px',
+        }}
+      >
+        {t('Total Income')}
+      </View>
+      <RenderMonths>
+        {({ month }) => <IncomeTotalsMonth month={month} group={group} />}
+      </RenderMonths>
+    </Row>
+  );
+}
 
 type BudgetCategoriesProps = {
   categoryGroups: CategoryGroupEntity[];
@@ -86,7 +118,37 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     const items: BudgetItem[] = useMemo(() => {
       const [expenseGroups, incomeGroup] = separateGroups(categoryGroups);
 
-      let items: BudgetItem[] = Array.prototype.concat.apply(
+      // Build income items first (Monarch layout: income at top)
+      let items: BudgetItem[] = [];
+
+      if (incomeGroup) {
+        items.push({ type: 'income-group', value: incomeGroup });
+
+        if (newCategoryForGroup === incomeGroup.id) {
+          items.push({ type: 'new-category' });
+        }
+
+        items.push(
+          ...(collapsedGroupIds.includes(incomeGroup.id)
+            ? []
+            : incomeGroup.categories?.filter(
+                cat => showHiddenCategories || !cat.hidden,
+              ) || []
+          ).map(
+            (cat): BudgetItem => ({
+              type: 'income-category',
+              value: cat,
+            }),
+          ),
+        );
+
+        // Total income summary row, then separator before expenses
+        items.push({ type: 'income-total', value: incomeGroup });
+        items.push({ type: 'income-separator' });
+      }
+
+      // Then expense groups
+      const expenseItems: BudgetItem[] = Array.prototype.concat.apply(
         [],
         expenseGroups.map(group => {
           if (group.hidden && !showHiddenCategories) {
@@ -97,16 +159,16 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
             cat => showHiddenCategories || !cat.hidden,
           );
 
-          const items: BudgetItem[] = [
+          const groupItems: BudgetItem[] = [
             { type: 'expense-group', value: { ...group } },
           ];
 
           if (newCategoryForGroup === group.id) {
-            items.push({ type: 'new-category' });
+            groupItems.push({ type: 'new-category' });
           }
 
           return [
-            ...items,
+            ...groupItems,
             ...(collapsedGroupIds.includes(group.id)
               ? []
               : groupCategories || []
@@ -121,35 +183,10 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
         }),
       );
 
+      items = items.concat(expenseItems);
+
       if (isAddingGroup) {
         items.push({ type: 'new-group' });
-      }
-
-      if (incomeGroup) {
-        const incomeCategoryItems: BudgetItem[] = [
-          { type: 'income-separator' },
-          { type: 'income-group', value: incomeGroup },
-        ];
-
-        if (newCategoryForGroup === incomeGroup.id) {
-          incomeCategoryItems.push({ type: 'new-category' });
-        }
-
-        incomeCategoryItems.push(
-          ...(collapsedGroupIds.includes(incomeGroup.id)
-            ? []
-            : incomeGroup.categories?.filter(
-                cat => showHiddenCategories || !cat.hidden,
-              ) || []
-          ).map(
-            (cat): BudgetItem => ({
-              type: 'income-category',
-              value: cat,
-            }),
-          ),
-        );
-
-        items = items.concat(incomeCategoryItems);
       }
 
       return items;
@@ -237,10 +274,10 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       <View
         style={{
           marginBottom: 10,
-          backgroundColor: theme.budgetCurrentMonth, // match budget colors, not generic table colors.
+          backgroundColor: theme.budgetCurrentMonth,
           overflow: 'hidden',
           boxShadow: styles.cardShadow,
-          borderRadius: '0 0 4px 4px',
+          borderRadius: '0 0 12px 12px',
           flex: 1,
         }}
       >
@@ -322,15 +359,48 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 />
               );
               break;
+            case 'income-total':
+              content = (
+                <IncomeTotalRow group={item.value} />
+              );
+              break;
             case 'income-separator':
               content = (
                 <View
                   style={{
-                    height: styles.incomeHeaderHeight,
-                    backgroundColor: theme.budgetCurrentMonth,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    height: 44,
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    marginTop: 8,
+                    borderTop: '1px solid ' + theme.tableBorder,
+                    backgroundColor: theme.tableHeaderBackground,
                   }}
                 >
-                  <IncomeHeader onShowNewGroup={onShowNewGroup} />
+                  <View
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      color: theme.tableHeaderText,
+                      textTransform: 'uppercase',
+                      flex: 1,
+                    }}
+                  >
+                    <Trans>Expenses</Trans>
+                  </View>
+                  <Button
+                    variant="bare"
+                    onPress={onShowNewGroup}
+                    style={{
+                      fontSize: 12,
+                      color: theme.pageTextLight,
+                      padding: '3px 8px',
+                    }}
+                  >
+                    + <Trans>Add group</Trans>
+                  </Button>
                 </View>
               );
               break;
@@ -389,6 +459,8 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                     ? {}
                     : {
                         ':hover': { backgroundColor: theme.budgetCurrentMonth },
+                        ...(item.type === 'expense-group' &&
+                          idx !== 0 && { marginTop: 8 }),
                       }
                 }
               >

@@ -85,7 +85,7 @@ export function Accounts() {
         style={{
           height: 1,
           backgroundColor: theme.sidebarItemBackgroundHover,
-          marginTop: 15,
+          marginTop: 20,
           flexShrink: 0,
         }}
       />
@@ -109,6 +109,10 @@ export function Accounts() {
               fontWeight,
               marginTop: 13,
               marginBottom: 5,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: theme.pageTextSubdued,
             }}
             titleAccount
             balanceTestId="sidebar-on-budget-balance"
@@ -141,6 +145,10 @@ export function Accounts() {
               fontWeight,
               marginTop: 13,
               marginBottom: 5,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: theme.pageTextSubdued,
             }}
             titleAccount
             balanceTestId="sidebar-off-budget-balance"

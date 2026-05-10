@@ -50,10 +50,10 @@ export function Item({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        height: 20,
+        height: 24,
       }}
     >
-      <Icon width={15} height={15} />
+      <Icon width={16} height={16} />
       <Block style={{ marginLeft: 8 }}>{title}</Block>
       <View style={{ flex: 1 }} />
     </View>
@@ -64,8 +64,8 @@ export function Item({
       <ItemContent
         style={{
           ...styles.mediumText,
-          paddingTop: 8,
-          paddingBottom: 8,
+          paddingTop: 10,
+          paddingBottom: 10,
           paddingLeft: 11 + indent,
           paddingRight: 10,
           borderRadius: 8,

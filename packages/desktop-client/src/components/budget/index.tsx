@@ -7,6 +7,7 @@ import { Button } from '@actual-app/components/button';
 import {
   SvgCheveronLeft,
   SvgCheveronRight,
+  SvgCog,
 } from '@actual-app/components/icons/v1';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
@@ -274,6 +275,7 @@ export function Budget() {
             flexShrink: 0,
           }}
         >
+          {/* Month + nav */}
           <Text
             style={{
               fontSize: 20,
@@ -320,6 +322,64 @@ export function Budget() {
               Today
             </Button>
           )}
+
+          {/* Budget | Forecast tabs */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginLeft: 20,
+              gap: 4,
+            }}
+          >
+            <View
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: theme.sidebarItemAccentSelected,
+                paddingBottom: 2,
+                borderBottom:
+                  '2px solid ' + theme.sidebarItemAccentSelected,
+                cursor: 'default',
+              }}
+            >
+              Budget
+            </View>
+            <View
+              style={{
+                fontSize: 14,
+                fontWeight: 400,
+                color: theme.pageTextSubdued,
+                paddingBottom: 2,
+                marginLeft: 12,
+                cursor: 'default',
+              }}
+            >
+              Forecast
+            </View>
+          </View>
+
+          {/* Spacer */}
+          <View style={{ flex: 1 }} />
+
+          {/* Settings button */}
+          <Button
+            variant="bare"
+            onPress={() => navigate('/settings')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 10px',
+              borderRadius: 8,
+              border: '1px solid ' + theme.buttonNormalBorder,
+              color: theme.pageTextLight,
+              fontSize: 13,
+            }}
+          >
+            <SvgCog width={13} height={13} />
+            Settings
+          </Button>
         </View>
         <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
           <View style={{ flex: 1, overflow: 'hidden' }}>{table}</View>

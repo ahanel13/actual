@@ -23,12 +23,13 @@ export const Setting = ({ primaryAction, style, children }: SettingProps) => {
     <View
       className={css([
         {
-          backgroundColor: theme.pillBackground,
+          backgroundColor: theme.cardBackground,
           alignSelf: 'flex-start',
           alignItems: 'flex-start',
           padding: 15,
-          borderRadius: 4,
-          border: '1px solid ' + theme.pillBorderDark,
+          borderRadius: 10,
+          border: '1px solid ' + theme.cardBorder,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)',
           width: '100%',
         },
         style,

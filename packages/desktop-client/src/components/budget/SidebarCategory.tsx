@@ -21,6 +21,21 @@ import { useGlobalPref } from '#hooks/useGlobalPref';
 
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
 
+const CATEGORY_COLORS = [
+  '#f97316', '#ef4444', '#8b5cf6', '#3b82f6', '#10b981',
+  '#f59e0b', '#ec4899', '#06b6d4', '#6366f1', '#84cc16',
+  '#14b8a6', '#a855f7',
+];
+
+function getCategoryColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    hash |= 0;
+  }
+  return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length];
+}
+
 type SidebarCategoryProps = {
   innerRef: Ref<HTMLDivElement>;
   category: CategoryEntity;
@@ -83,6 +98,16 @@ export function SidebarCategory({
       ref={triggerRef}
       onContextMenu={handleContextMenu}
     >
+      <View
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: 2,
+          backgroundColor: getCategoryColor(category.id),
+          flexShrink: 0,
+          marginRight: 6,
+        }}
+      />
       <TextOneLine data-testid="category-name">{category.name}</TextOneLine>
       <View style={{ flexShrink: 0, marginLeft: 5 }}>
         <Button

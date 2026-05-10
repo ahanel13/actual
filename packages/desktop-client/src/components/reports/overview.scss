@@ -9,7 +9,9 @@
 }
 
 .react-grid-item.react-grid-placeholder {
-  background-color: #8719e0;
+  background-color: #ff692d;
+  opacity: 0.2;
+  border-radius: 12px;
 }
 
 .react-grid-item > .react-resizable-handle::after {

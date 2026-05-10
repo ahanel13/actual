@@ -291,9 +291,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
                 paddingLeft: 3,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderTopWidth: 1,
-                borderBottomWidth: 1,
-                borderColor: theme.tableBorder,
               }}
             >
               <NotesButton
@@ -309,9 +306,6 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
                 paddingLeft: 3,
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderTopWidth: 1,
-                borderBottomWidth: 1,
-                borderColor: theme.tableBorder,
               }}
             >
               <Button
@@ -562,26 +556,43 @@ export const ExpenseCategoryMonth = memo(function ExpenseCategoryMonth({
   );
 });
 
-type IncomeGroupMonthProps = {
-  month: string;
-};
-export function IncomeGroupMonth({ month }: IncomeGroupMonthProps) {
+export function IncomeGroupMonth({ month, group }: CategoryGroupMonthProps) {
+  const bgColor = monthUtils.isCurrentMonth(month)
+    ? theme.budgetHeaderCurrentMonth
+    : theme.budgetHeaderOtherMonth;
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: bgColor }}>
+      <EnvelopeSheetCell
+        name="budgeted"
+        width="flex"
+        textAlign="right"
+        style={{ fontWeight: 600, ...styles.tnum }}
+        valueProps={{
+          binding: envelopeBudget.groupBudgeted(group.id),
+          type: 'financial',
+        }}
+      />
       <EnvelopeSheetCell
         name="received"
+        width="flex"
+        textAlign="right"
+        style={{ fontWeight: 600, ...styles.tnum }}
+        valueProps={{
+          binding: envelopeBudget.groupSumAmount(group.id),
+          type: 'financial',
+        }}
+      />
+      <EnvelopeSheetCell
+        name="balance"
         width="flex"
         textAlign="right"
         style={{
           fontWeight: 600,
           paddingRight: styles.monthRightPadding,
           ...styles.tnum,
-          backgroundColor: monthUtils.isCurrentMonth(month)
-            ? theme.budgetHeaderCurrentMonth
-            : theme.budgetHeaderOtherMonth,
         }}
         valueProps={{
-          binding: envelopeBudget.groupIncomeReceived,
+          binding: envelopeBudget.groupBalance(group.id),
           type: 'financial',
         }}
       />
@@ -593,10 +604,13 @@ export function IncomeCategoryMonth({
   category,
   isLast,
   month,
+  editing,
+  onEdit,
   onShowActivity,
   onBudgetAction,
 }: CategoryMonthProps) {
   const incomeMenuTriggerRef = useRef(null);
+  const format = useFormat();
   const {
     setMenuOpen: setIncomeMenuOpen,
     menuOpen: incomeMenuOpen,
@@ -605,8 +619,51 @@ export function IncomeCategoryMonth({
     position: incomePosition,
   } = useContextMenu();
 
+  const bgColor = monthUtils.isCurrentMonth(month)
+    ? theme.budgetCurrentMonth
+    : theme.budgetOtherMonth;
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      {/* Budget column — editable */}
+      <EnvelopeSheetCell
+        name="budget"
+        exposed={editing}
+        focused={editing}
+        width="flex"
+        onExpose={() => onEdit(category.id, month)}
+        style={{ ...(editing && { zIndex: 100 }), ...styles.tnum }}
+        textAlign="right"
+        valueStyle={{
+          cursor: 'default',
+          margin: 1,
+          padding: '0 4px',
+          borderRadius: 4,
+          ':hover': {
+            boxShadow: 'inset 0 0 0 1px ' + theme.pageTextSubdued,
+            backgroundColor: bgColor,
+          },
+        }}
+        valueProps={{
+          binding: envelopeBudget.catBudgeted(category.id),
+          type: 'financial',
+          getValueStyle: makeAmountGrey,
+          formatExpr: format.forEdit,
+          unformatExpr: format.fromEdit,
+        }}
+        inputProps={{
+          onBlur: () => onEdit(null),
+          style: { backgroundColor: bgColor },
+        }}
+        onSave={(parsedIntegerAmount: number | null) => {
+          onBudgetAction(month, 'budget-amount', {
+            category: category.id,
+            amount: parsedIntegerAmount ?? 0,
+          });
+        }}
+      />
+
+      {/* Received column */}
       <Field
         name="received"
         width="flex"
@@ -615,19 +672,14 @@ export function IncomeCategoryMonth({
         style={{
           textAlign: 'right',
           ...(isLast && { borderBottomWidth: 0 }),
-          backgroundColor: monthUtils.isCurrentMonth(month)
-            ? theme.budgetCurrentMonth
-            : theme.budgetOtherMonth,
+          backgroundColor: bgColor,
         }}
       >
         <View
-          name="received"
           style={{
-            display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            position: 'relative',
           }}
         >
           <Button
@@ -638,18 +690,13 @@ export function IncomeCategoryMonth({
             }}
             onContextMenu={e => {
               handleIncomeContextMenu(e);
-              // We need to calculate differently from the hook due to being aligned to the right
               const rect = e.currentTarget.getBoundingClientRect();
               resetIncomePosition(
                 e.clientX - rect.right + 200 - 8,
                 e.clientY - rect.bottom - 8,
               );
             }}
-            style={{
-              background: 'transparent',
-              padding: 0,
-              paddingRight: styles.monthRightPadding,
-            }}
+            style={{ background: 'transparent', padding: 0 }}
           >
             <BalanceWithCarryover
               carryover={envelopeBudget.catCarryover(category.id)}
@@ -678,6 +725,73 @@ export function IncomeCategoryMonth({
           </Popover>
         </View>
       </Field>
+
+      {/* Balance column */}
+      <Field
+        name="balance"
+        width="flex"
+        style={{
+          textAlign: 'right',
+          paddingRight: styles.monthRightPadding,
+          backgroundColor: bgColor,
+        }}
+      >
+        <EnvelopeCellValue
+          binding={envelopeBudget.catBalance(category.id)}
+          type="financial"
+        >
+          {props => (
+            <CellValueText
+              {...props}
+              className={css({ ...makeAmountGrey(props.value), ...styles.tnum })}
+            />
+          )}
+        </EnvelopeCellValue>
+      </Field>
+    </View>
+  );
+}
+
+export function IncomeTotalsMonth({ month, group }: CategoryGroupMonthProps) {
+  const bgColor = monthUtils.isCurrentMonth(month)
+    ? theme.budgetCurrentMonth
+    : theme.budgetOtherMonth;
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: bgColor }}>
+      <EnvelopeSheetCell
+        name="budgeted"
+        width="flex"
+        textAlign="right"
+        style={{ fontWeight: 700, ...styles.tnum }}
+        valueProps={{
+          binding: envelopeBudget.groupBudgeted(group.id),
+          type: 'financial',
+        }}
+      />
+      <EnvelopeSheetCell
+        name="received"
+        width="flex"
+        textAlign="right"
+        style={{ fontWeight: 700, ...styles.tnum }}
+        valueProps={{
+          binding: envelopeBudget.groupSumAmount(group.id),
+          type: 'financial',
+        }}
+      />
+      <EnvelopeSheetCell
+        name="balance"
+        width="flex"
+        textAlign="right"
+        style={{
+          fontWeight: 700,
+          paddingRight: styles.monthRightPadding,
+          ...styles.tnum,
+        }}
+        valueProps={{
+          binding: envelopeBudget.groupBalance(group.id),
+          type: 'financial',
+        }}
+      />
     </View>
   );
 }

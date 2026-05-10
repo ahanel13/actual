@@ -128,11 +128,10 @@ const DynamicBudgetTable = ({
       style={{
         width,
         height,
-        alignItems: 'center',
         opacity: width <= 0 || height <= 0 ? 0 : 1,
       }}
     >
-      <View style={{ width: '100%', maxWidth }}>
+      <View style={{ width: '100%' }}>
         <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
           <BudgetTable
             type={type}

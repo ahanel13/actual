@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
+import {
+  SvgDotsHorizontalTriple,
+  SvgInformationOutline,
+} from '@actual-app/components/icons/v1';
 import { Popover } from '@actual-app/components/popover';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -82,9 +85,17 @@ function SectionCard({
           {label}
         </View>
         <PrivacyFilter>
-          <View style={{ fontSize: 12, color: theme.pageTextSubdued }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 3,
+              fontSize: 12,
+              color: theme.pageTextSubdued,
+            }}
+          >
             <FinancialText>{format(absBudget, 'financial')}</FinancialText>
-            {' ' + t('budget')}
+            <View>{t('budget')}</View>
           </View>
         </PrivacyFilter>
       </View>
@@ -113,27 +124,64 @@ function SectionCard({
       {/* Actual vs Remaining */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <PrivacyFilter>
-          <View style={{ fontSize: 12, color: theme.pageTextLight }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 3,
+              fontSize: 12,
+              color: theme.pageTextLight,
+            }}
+          >
             <FinancialText>{format(absActual, 'financial')}</FinancialText>
-            {' ' + (invertProgress ? t('earned') : t('spent'))}
+            <View>{invertProgress ? t('earned') : t('spent')}</View>
           </View>
         </PrivacyFilter>
         <PrivacyFilter>
           <View
             style={{
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 3,
               fontSize: 12,
               fontWeight: 600,
               color: isRemNegative ? theme.numberNegative : theme.numberPositive,
             }}
           >
             <FinancialText>{format(Math.abs(remaining), 'financial')}</FinancialText>
-            {' ' + t('remaining')}
+            <View style={{ fontWeight: 400, color: theme.pageTextLight }}>
+              {t('remaining')}
+            </View>
           </View>
         </PrivacyFilter>
       </View>
     </View>
   );
 }
+
+// Reads its own sheet data and renders a SectionCard for an expense group
+function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
+  const budget = (useEnvelopeSheetValue(
+    envelopeBudget.groupBudgeted(group.id),
+  ) ?? 0) as number;
+  const spent = (useEnvelopeSheetValue(
+    envelopeBudget.groupSumAmount(group.id),
+  ) ?? 0) as number;
+  const balance = (useEnvelopeSheetValue(
+    envelopeBudget.groupBalance(group.id),
+  ) ?? 0) as number;
+
+  return (
+    <SectionCard
+      label={group.name}
+      budget={-budget}
+      actual={-spent}
+      remaining={balance}
+    />
+  );
+}
+
+type TabName = 'summary' | 'income' | 'expenses';
 
 type MonarchSummaryPanelProps = {
   month: string;
@@ -150,6 +198,7 @@ export function MonarchSummaryPanel({
   const locale = useLocale();
   const { showUndoNotification } = useUndo();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabName>('expenses');
   const menuTriggerRef = useRef(null);
 
   const prevMonthName = monthUtils.format(
@@ -169,9 +218,8 @@ export function MonarchSummaryPanel({
     );
   }, []);
 
-  const incomeGroups = categoryGroups.filter(
-    g => g.type === 'income' && !g.hidden,
-  );
+  const incomeGroups = categoryGroups.filter(g => g.is_income && !g.hidden);
+  const expenseGroups = categoryGroups.filter(g => !g.is_income && !g.hidden);
 
   const totalIncomeBudget = Object.values(incomeBudgets).reduce(
     (sum, v) => sum + v,
@@ -194,8 +242,13 @@ export function MonarchSummaryPanel({
     }) as number) ?? 0;
 
   const isOverbudgeted = toBudget < 0;
+  const incomeRemaining = totalIncomeBudget + totalIncome;
 
-  const incomeRemaining = totalIncomeBudget + totalIncome; // income is negative spend
+  const tabs: { id: TabName; label: string }[] = [
+    { id: 'summary', label: t('Summary') },
+    { id: 'income', label: t('Income') },
+    { id: 'expenses', label: t('Expenses') },
+  ];
 
   return (
     <View
@@ -235,12 +288,20 @@ export function MonarchSummaryPanel({
         >
           <View
             style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
               fontSize: 13,
               fontWeight: 600,
               color: isOverbudgeted ? theme.errorTextDark : theme.noticeTextDark,
             }}
           >
-            {t('Summary')}
+            {t('Left to budget')}
+            <SvgInformationOutline
+              width={13}
+              height={13}
+              style={{ opacity: 0.5 }}
+            />
           </View>
           <Button
             ref={menuTriggerRef}
@@ -340,29 +401,113 @@ export function MonarchSummaryPanel({
             month={month}
             prevMonthName={prevMonthName}
             onBudgetAction={onBudgetAction}
+            hideLabel
             amountStyle={{
+              fontSize: 36,
+              fontWeight: 700,
               color: isOverbudgeted ? theme.errorText : theme.noticeTextDark,
             }}
           />
+          <View
+            style={{
+              fontSize: 12,
+              color: isOverbudgeted ? theme.errorTextDark : theme.noticeTextDark,
+              opacity: 0.7,
+              marginTop: 2,
+            }}
+          >
+            {isOverbudgeted ? t('Overbudgeted') : t('Left to budget')}
+          </View>
         </View>
       </View>
 
-      {/* Income section */}
-      <SectionCard
-        label={t('Income')}
-        budget={totalIncomeBudget}
-        actual={-totalIncome}
-        remaining={incomeRemaining}
-        invertProgress
-      />
+      {/* Tab navigation */}
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: theme.cardBackground,
+          borderRadius: 10,
+          padding: 3,
+          marginBottom: 12,
+          flexShrink: 0,
+          boxShadow: '0px 1px 2px rgba(34,32,29,0.08)',
+        }}
+      >
+        {tabs.map(tab => (
+          <Button
+            key={tab.id}
+            variant="bare"
+            onPress={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              padding: '6px 4px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: activeTab === tab.id ? 600 : 400,
+              color:
+                activeTab === tab.id ? theme.pageText : theme.pageTextSubdued,
+              backgroundColor:
+                activeTab === tab.id
+                  ? theme.pageBackground
+                  : 'transparent',
+              boxShadow:
+                activeTab === tab.id
+                  ? '0px 1px 3px rgba(34,32,29,0.12)'
+                  : 'none',
+            }}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </View>
 
-      {/* Expenses section */}
-      <SectionCard
-        label={t('Expenses')}
-        budget={-totalExpenseBudget}
-        actual={-totalSpent}
-        remaining={totalBalance}
-      />
+      {/* Tab content */}
+      {/* Summary tab: overview of both income and expenses */}
+      {activeTab === 'summary' && (
+        <>
+          <SectionCard
+            label={t('Income')}
+            budget={totalIncomeBudget}
+            actual={-totalIncome}
+            remaining={incomeRemaining}
+            invertProgress
+          />
+          <SectionCard
+            label={t('Expenses')}
+            budget={-totalExpenseBudget}
+            actual={-totalSpent}
+            remaining={totalBalance}
+          />
+        </>
+      )}
+
+      {/* Income tab: income breakdown */}
+      {activeTab === 'income' && (
+        <SectionCard
+          label={t('Income')}
+          budget={totalIncomeBudget}
+          actual={-totalIncome}
+          remaining={incomeRemaining}
+          invertProgress
+        />
+      )}
+
+      {/* Expenses tab: per expense-group breakdown */}
+      {activeTab === 'expenses' && (
+        <>
+          {expenseGroups.length > 0 ? (
+            expenseGroups.map(g => <GroupSectionCard key={g.id} group={g} />)
+          ) : (
+            <SectionCard
+              label={t('Expenses')}
+              budget={-totalExpenseBudget}
+              actual={-totalSpent}
+              remaining={totalBalance}
+            />
+          )}
+        </>
+      )}
     </View>
   );
 }

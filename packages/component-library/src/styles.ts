@@ -164,8 +164,8 @@ export const styles: CSSProperties = {
   tableContainer: {
     flex: 1,
     border: '1px solid ' + theme.tableBorder,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderRadius: 12,
     overflow: 'hidden',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
   },
 };
