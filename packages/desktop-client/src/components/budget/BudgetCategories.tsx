@@ -15,11 +15,11 @@ import type { DragState, OnDropCallback } from '#components/sort';
 import { Row } from '#components/table';
 import { useLocalPref } from '#hooks/useLocalPref';
 
+import { IncomeTotalsMonth } from './envelope/EnvelopeBudgetComponents';
 import { ExpenseCategory } from './ExpenseCategory';
 import { ExpenseGroup } from './ExpenseGroup';
 import { IncomeCategory } from './IncomeCategory';
 import { IncomeGroup } from './IncomeGroup';
-import { IncomeTotalsMonth } from './envelope/EnvelopeBudgetComponents';
 import { RenderMonths } from './RenderMonths';
 import { SidebarCategory } from './SidebarCategory';
 import { SidebarGroup } from './SidebarGroup';
@@ -37,7 +37,10 @@ type BudgetItem =
   | { type: 'income-separator' }
   | { type: 'income-group'; value: CategoryGroupEntity }
   | { type: 'income-category'; value: CategoryEntity }
-  | { type: 'income-total'; value: CategoryGroupEntity };
+  | { type: 'income-total'; value: CategoryGroupEntity }
+  | { type: 'savings-separator' }
+  | { type: 'savings-group'; value: CategoryGroupEntity }
+  | { type: 'savings-category'; value: CategoryEntity; group: CategoryGroupEntity };
 
 type LocalDragState =
   | DragState<CategoryEntity>
@@ -116,7 +119,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       string | null
     >(null);
     const items: BudgetItem[] = useMemo(() => {
-      const [expenseGroups, incomeGroup] = separateGroups(categoryGroups);
+      const [expenseGroups, savingsGroups, incomeGroup] = separateGroups(categoryGroups);
 
       // Build income items first (Monarch layout: income at top)
       let items: BudgetItem[] = [];
@@ -184,6 +187,40 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       );
 
       items = items.concat(expenseItems);
+
+      // Savings & Investments section
+      if (savingsGroups.length > 0) {
+        items.push({ type: 'savings-separator' });
+
+        const savingsItems: BudgetItem[] = Array.prototype.concat.apply(
+          [],
+          savingsGroups.map(group => {
+            if (group.hidden && !showHiddenCategories) return [];
+
+            const groupCategories = group.categories?.filter(
+              cat => showHiddenCategories || !cat.hidden,
+            );
+            const groupItems: BudgetItem[] = [
+              { type: 'savings-group', value: { ...group } },
+            ];
+            if (newCategoryForGroup === group.id) {
+              groupItems.push({ type: 'new-category' });
+            }
+            return [
+              ...groupItems,
+              ...(collapsedGroupIds.includes(group.id)
+                ? []
+                : groupCategories || []
+              ).map((cat): BudgetItem => ({
+                type: 'savings-category',
+                value: cat,
+                group,
+              })),
+            ];
+          }),
+        );
+        items = items.concat(savingsItems);
+      }
 
       if (isAddingGroup) {
         items.push({ type: 'new-group' });
@@ -360,9 +397,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               );
               break;
             case 'income-total':
-              content = (
-                <IncomeTotalRow group={item.value} />
-              );
+              content = <IncomeTotalRow group={item.value} />;
               break;
             case 'income-separator':
               content = (
@@ -434,6 +469,72 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 />
               );
               break;
+            case 'savings-separator':
+              content = (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    height: 44,
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    marginTop: 8,
+                    borderTop: '1px solid ' + theme.tableBorder,
+                    backgroundColor: theme.tableHeaderBackground,
+                  }}
+                >
+                  <View
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      color: theme.tableHeaderText,
+                      textTransform: 'uppercase',
+                      flex: 1,
+                    }}
+                  >
+                    <Trans>Savings &amp; Investments</Trans>
+                  </View>
+                </View>
+              );
+              break;
+            case 'savings-group':
+              content = (
+                <ExpenseGroup
+                  group={item.value}
+                  editingCell={editingCell}
+                  collapsed={collapsedGroupIds.includes(item.value.id)}
+                  dragState={dragState}
+                  onEditName={onEditName}
+                  onSave={_onSaveGroup}
+                  onDelete={onDeleteGroup}
+                  onDragChange={onDragChange}
+                  onReorderGroup={onReorderGroup}
+                  onReorderCategory={onReorderCategory}
+                  onToggleCollapse={onToggleCollapse}
+                  onShowNewCategory={onShowNewCategory}
+                  onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
+                />
+              );
+              break;
+            case 'savings-category':
+              content = (
+                <ExpenseCategory
+                  cat={item.value}
+                  categoryGroup={item.group}
+                  editingCell={editingCell}
+                  dragState={dragState}
+                  onEditName={onEditName}
+                  onEditMonth={onEditMonth}
+                  onSave={_onSaveCategory}
+                  onDelete={onDeleteCategory}
+                  onDragChange={onDragChange}
+                  onReorder={onReorderCategory}
+                  onBudgetAction={onBudgetAction}
+                  onShowActivity={onShowActivity}
+                />
+              );
+              break;
             default:
               // @ts-expect-error Error is expected here because "item.type" is "never"
               throw new Error('Unknown item type: ' + item.type);
@@ -448,8 +549,10 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 'value' in item
                   ? item.value.id
                   : item.type === 'income-separator'
-                    ? 'separator'
-                    : idx
+                    ? 'income-separator'
+                    : item.type === 'savings-separator'
+                      ? 'savings-separator'
+                      : idx
               }
               value={pos}
             >

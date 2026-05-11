@@ -49,6 +49,7 @@ export type DbCategoryGroup = {
   id: string;
   name: string;
   is_income: 1 | 0;
+  is_savings: 1 | 0;
   sort_order: number;
   hidden: 1 | 0;
   tombstone: 1 | 0;

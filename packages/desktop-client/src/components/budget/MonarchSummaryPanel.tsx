@@ -216,16 +216,6 @@ function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
   );
 }
 
-const SAVINGS_KEYWORDS = [
-  'saving', 'investment', 'invest', 'retire', 'ira', '401k', 'roth',
-  'brokerage', 'emergency', 'wealth', 'portfolio',
-];
-
-function isSavingsGroup(group: CategoryGroupEntity): boolean {
-  const name = group.name.toLowerCase();
-  return SAVINGS_KEYWORDS.some(kw => name.includes(kw));
-}
-
 type TabName = 'summary' | 'income' | 'expenses' | 'savings';
 
 type MonarchSummaryPanelProps = {
@@ -264,9 +254,8 @@ export function MonarchSummaryPanel({
   }, []);
 
   const incomeGroups = categoryGroups.filter(g => g.is_income && !g.hidden);
-  const allExpenseGroups = categoryGroups.filter(g => !g.is_income && !g.hidden);
-  const savingsGroups = allExpenseGroups.filter(isSavingsGroup);
-  const expenseGroups = allExpenseGroups.filter(g => !isSavingsGroup(g));
+  const savingsGroups = categoryGroups.filter(g => g.is_savings && !g.hidden);
+  const expenseGroups = categoryGroups.filter(g => !g.is_income && !g.is_savings && !g.hidden);
 
   const totalIncomeBudget = Object.values(incomeBudgets).reduce(
     (sum, v) => sum + v,

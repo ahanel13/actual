@@ -4,6 +4,7 @@ export type CategoryGroupEntity = {
   id: string;
   name: string;
   is_income?: boolean;
+  is_savings?: boolean;
   sort_order?: number;
   tombstone?: boolean;
   hidden?: boolean;

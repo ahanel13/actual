@@ -138,6 +138,10 @@ export function SidebarGroup({
                     onDelete(group.id);
                   } else if (type === 'toggle-visibility') {
                     onSave({ ...group, hidden: !group.hidden });
+                  } else if (type === 'mark-as-savings') {
+                    onSave({ ...group, is_savings: true });
+                  } else if (type === 'mark-as-expense') {
+                    onSave({ ...group, is_savings: false });
                   } else if (type === 'apply-multiple-category-template') {
                     onApplyBudgetTemplatesInGroup?.(
                       group.categories.filter(c => !c.hidden).map(c => c.id),
@@ -150,6 +154,14 @@ export function SidebarGroup({
                   !group.is_income && {
                     name: 'toggle-visibility',
                     text: group.hidden ? t('Show') : t('Hide'),
+                  },
+                  !group.is_income && !group.is_savings && {
+                    name: 'mark-as-savings',
+                    text: t('Mark as Savings'),
+                  },
+                  !group.is_income && group.is_savings && {
+                    name: 'mark-as-expense',
+                    text: t('Mark as Expense'),
                   },
                   onDelete && { name: 'delete', text: t('Delete') },
                   ...(isGoalTemplatesEnabled
