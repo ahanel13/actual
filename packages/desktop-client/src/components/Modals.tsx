@@ -14,6 +14,7 @@ import { useDispatch } from '#redux';
 import { EditSyncAccount } from './banksync/EditSyncAccount';
 import { AccountAutocompleteModal } from './modals/AccountAutocompleteModal';
 import { AccountMenuModal } from './modals/AccountMenuModal';
+import { AddEditHoldingModal } from './modals/AddEditHoldingModal';
 import { BudgetAutomationsModal } from './modals/BudgetAutomationsModal';
 import { BudgetPageMenuModal } from './modals/BudgetPageMenuModal';
 import { CategoryAutocompleteModal } from './modals/CategoryAutocompleteModal';
@@ -23,6 +24,7 @@ import { CategoryMenuModal } from './modals/CategoryMenuModal';
 import { CloseAccountModal } from './modals/CloseAccountModal';
 import { ConfirmCategoryDeleteModal } from './modals/ConfirmCategoryDeleteModal';
 import { ConfirmDeleteModal } from './modals/ConfirmDeleteModal';
+import { DissolveGroupModal } from './modals/DissolveGroupModal';
 import { ConfirmPayeesMergeModal } from './modals/ConfirmPayeesMergeModal';
 import { ConfirmTransactionEditModal } from './modals/ConfirmTransactionEditModal';
 import { ConfirmUnlinkAccountModal } from './modals/ConfirmUnlinkAccountModal';
@@ -32,10 +34,8 @@ import { CoverModal } from './modals/CoverModal';
 import { CreateAccountModal } from './modals/CreateAccountModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
-import { AddEditHoldingModal } from './modals/AddEditHoldingModal';
-import { ImportBalanceHistoryModal } from './modals/ImportBalanceHistoryModal';
-import { EditAccountTypeModal } from './modals/EditAccountTypeModal';
 import { EditUserAccess } from './modals/EditAccess';
+import { EditAccountTypeModal } from './modals/EditAccountTypeModal';
 import { EditFieldModal } from './modals/EditFieldModal';
 import { EditRuleModal } from './modals/EditRuleModal';
 import { EditUserFinanceApp } from './modals/EditUser';
@@ -50,6 +50,7 @@ import { GoalTemplateModal } from './modals/GoalTemplateModal';
 import { GoCardlessExternalMsgModal } from './modals/GoCardlessExternalMsgModal';
 import { GoCardlessInitialiseModal } from './modals/GoCardlessInitialiseModal';
 import { HoldBufferModal } from './modals/HoldBufferModal';
+import { ImportBalanceHistoryModal } from './modals/ImportBalanceHistoryModal';
 import { ImportTransactionsModal } from './modals/ImportTransactionsModal';
 import { KeyboardShortcutModal } from './modals/KeyboardShortcutModal';
 import { LoadBackupModal } from './modals/LoadBackupModal';
@@ -152,6 +153,8 @@ export function Modals() {
 
         case 'confirm-category-delete':
           return <ConfirmCategoryDeleteModal key={key} {...modal.options} />;
+        case 'dissolve-group':
+          return <DissolveGroupModal key={key} {...modal.options} />;
 
         case 'confirm-payees-merge':
           return <ConfirmPayeesMergeModal key={key} {...modal.options} />;
