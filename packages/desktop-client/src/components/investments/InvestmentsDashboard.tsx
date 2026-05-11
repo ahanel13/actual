@@ -33,79 +33,53 @@ const RANGE_LABELS: Record<TimeRange, string> = {
 const SP500_SYMBOL = 'SPY';
 const PORTFOLIO_COLOR = '#f97316';
 const SP500_COLOR = '#22d3ee';
-const CHART_COLORS = [SP500_COLOR, PORTFOLIO_COLOR, '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+const ALLOC_COLORS = ['#22d3ee', '#f97316', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
 
-// cents from holding
-function holdingValue(h: HoldingWithPrice): number {
+function holdingValueCents(h: HoldingWithPrice): number {
   if (h.current_price == null) return 0;
   return Math.round(h.shares * h.current_price * 100);
 }
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
+// ─── Fixed-count hook pattern (rules of hooks) ────────────────────────────────
 
-// Rules of hooks: call hooks at top level, not inside loops.
-// We limit to a reasonable max; unused entries are harmless.
-const MAX_ACCOUNTS = 20;
-const EMPTY: HoldingWithPrice[] = [];
-const EMPTY_HISTORY: { date: string; balance: number }[] = [];
+const MAX_ACCTS = 20;
+const NO_HOLDINGS: HoldingWithPrice[] = [];
+const NO_HISTORY: { date: string; balance: number }[] = [];
 
 function useAllAccountData(investmentAccounts: AccountEntity[]) {
-  const ids = investmentAccounts.map(a => a.id);
-  // Always call the same number of hooks by padding to MAX_ACCOUNTS
-  const padded = ids.slice(0, MAX_ACCOUNTS);
-  while (padded.length < MAX_ACCOUNTS) padded.push('');
+  const pad = (arr: string[]) => { while (arr.length < MAX_ACCTS) arr.push(''); return arr; };
+  const ids = pad(investmentAccounts.map(a => a.id).slice(0, MAX_ACCTS));
 
-  const h0 = useHoldings(padded[0]);
-  const h1 = useHoldings(padded[1]);
-  const h2 = useHoldings(padded[2]);
-  const h3 = useHoldings(padded[3]);
-  const h4 = useHoldings(padded[4]);
-  const h5 = useHoldings(padded[5]);
-  const h6 = useHoldings(padded[6]);
-  const h7 = useHoldings(padded[7]);
-  const h8 = useHoldings(padded[8]);
-  const h9 = useHoldings(padded[9]);
-  const h10 = useHoldings(padded[10]);
-  const h11 = useHoldings(padded[11]);
-  const h12 = useHoldings(padded[12]);
-  const h13 = useHoldings(padded[13]);
-  const h14 = useHoldings(padded[14]);
-  const h15 = useHoldings(padded[15]);
-  const h16 = useHoldings(padded[16]);
-  const h17 = useHoldings(padded[17]);
-  const h18 = useHoldings(padded[18]);
-  const h19 = useHoldings(padded[19]);
-
-  const b0 = useBalanceHistory(padded[0] || undefined);
-  const b1 = useBalanceHistory(padded[1] || undefined);
-  const b2 = useBalanceHistory(padded[2] || undefined);
-  const b3 = useBalanceHistory(padded[3] || undefined);
-  const b4 = useBalanceHistory(padded[4] || undefined);
-  const b5 = useBalanceHistory(padded[5] || undefined);
-  const b6 = useBalanceHistory(padded[6] || undefined);
-  const b7 = useBalanceHistory(padded[7] || undefined);
-  const b8 = useBalanceHistory(padded[8] || undefined);
-  const b9 = useBalanceHistory(padded[9] || undefined);
-  const b10 = useBalanceHistory(padded[10] || undefined);
-  const b11 = useBalanceHistory(padded[11] || undefined);
-  const b12 = useBalanceHistory(padded[12] || undefined);
-  const b13 = useBalanceHistory(padded[13] || undefined);
-  const b14 = useBalanceHistory(padded[14] || undefined);
-  const b15 = useBalanceHistory(padded[15] || undefined);
-  const b16 = useBalanceHistory(padded[16] || undefined);
-  const b17 = useBalanceHistory(padded[17] || undefined);
-  const b18 = useBalanceHistory(padded[18] || undefined);
-  const b19 = useBalanceHistory(padded[19] || undefined);
-
-  const allHoldings = [h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17,h18,h19];
-  const allHistory = [b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19];
+  /* eslint-disable react-hooks/rules-of-hooks */
+  const hs = [
+    useHoldings(ids[0]),  useHoldings(ids[1]),  useHoldings(ids[2]),  useHoldings(ids[3]),
+    useHoldings(ids[4]),  useHoldings(ids[5]),  useHoldings(ids[6]),  useHoldings(ids[7]),
+    useHoldings(ids[8]),  useHoldings(ids[9]),  useHoldings(ids[10]), useHoldings(ids[11]),
+    useHoldings(ids[12]), useHoldings(ids[13]), useHoldings(ids[14]), useHoldings(ids[15]),
+    useHoldings(ids[16]), useHoldings(ids[17]), useHoldings(ids[18]), useHoldings(ids[19]),
+  ];
+  const bs = [
+    useBalanceHistory(ids[0]  || undefined), useBalanceHistory(ids[1]  || undefined),
+    useBalanceHistory(ids[2]  || undefined), useBalanceHistory(ids[3]  || undefined),
+    useBalanceHistory(ids[4]  || undefined), useBalanceHistory(ids[5]  || undefined),
+    useBalanceHistory(ids[6]  || undefined), useBalanceHistory(ids[7]  || undefined),
+    useBalanceHistory(ids[8]  || undefined), useBalanceHistory(ids[9]  || undefined),
+    useBalanceHistory(ids[10] || undefined), useBalanceHistory(ids[11] || undefined),
+    useBalanceHistory(ids[12] || undefined), useBalanceHistory(ids[13] || undefined),
+    useBalanceHistory(ids[14] || undefined), useBalanceHistory(ids[15] || undefined),
+    useBalanceHistory(ids[16] || undefined), useBalanceHistory(ids[17] || undefined),
+    useBalanceHistory(ids[18] || undefined), useBalanceHistory(ids[19] || undefined),
+  ];
+  /* eslint-enable react-hooks/rules-of-hooks */
 
   return investmentAccounts.map((account, i) => ({
     account,
-    holdings: allHoldings[i]?.data ?? EMPTY,
-    history: allHistory[i]?.data ?? EMPTY_HISTORY,
+    holdings: hs[i]?.data ?? NO_HOLDINGS,
+    history:  bs[i]?.data ?? NO_HISTORY,
   }));
 }
+
+// ─── S&P 500 historical data ──────────────────────────────────────────────────
 
 function useSP500Chart(range: TimeRange) {
   const [data, setData] = useState<{ date: string; pct: number }[]>([]);
@@ -115,18 +89,18 @@ function useSP500Chart(range: TimeRange) {
     send('yahoo-chart', { symbol: SP500_SYMBOL, range })
       .then((result: { timestamps?: number[]; closes?: number[] } | null) => {
         if (!result?.timestamps?.length || !result.closes?.length) return;
-        const timestamps = result.timestamps;
-        const closes = result.closes;
+        const { timestamps, closes } = result;
         const firstClose = closes.find((c): c is number => c != null) ?? 1;
-        const points = timestamps
-          .map((ts, i) => ({
-            date: new Date(ts * 1000).toISOString().slice(0, 10),
-            pct: closes[i] != null
-              ? ((closes[i] - firstClose) / Math.abs(firstClose)) * 100
-              : null,
-          }))
-          .filter(p => p.pct != null) as { date: string; pct: number }[];
-        setData(points);
+        setData(
+          timestamps
+            .map((ts, i) => ({
+              date: new Date(ts * 1000).toISOString().slice(0, 10),
+              pct: closes[i] != null
+                ? ((closes[i] - firstClose) / Math.abs(firstClose)) * 100
+                : null,
+            }))
+            .filter((p): p is { date: string; pct: number } => p.pct != null),
+        );
       })
       .catch(() => setData([]));
   }, [range]);
@@ -134,37 +108,33 @@ function useSP500Chart(range: TimeRange) {
   return data;
 }
 
-// ─── Performance calc ─────────────────────────────────────────────────────────
+// ─── Portfolio % series from balance history ──────────────────────────────────
 
 function buildPortfolioSeries(
   accountData: { history: { date: string; balance: number }[] }[],
   range: TimeRange,
 ): { date: string; pct: number }[] {
-  const daysBack = range === '1mo' ? 31 : range === '3mo' ? 92 : range === '6mo' ? 183 : 366;
+  const days = range === '1mo' ? 31 : range === '3mo' ? 92 : range === '6mo' ? 183 : 366;
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - daysBack);
+  cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-  const dateMap = new Map<string, number>();
+  const map = new Map<string, number>();
   for (const { history } of accountData) {
-    for (const snap of history) {
-      if (snap.date < cutoffStr) continue;
-      dateMap.set(snap.date, (dateMap.get(snap.date) ?? 0) + snap.balance);
+    for (const s of history) {
+      if (s.date < cutoffStr) continue;
+      map.set(s.date, (map.get(s.date) ?? 0) + s.balance);
     }
   }
 
-  const sorted = Array.from(dateMap.entries())
+  const sorted = Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, balance]) => ({ date, balance }));
 
   if (sorted.length < 2) return [];
-  const firstBalance = sorted[0].balance;
-  if (firstBalance === 0) return [];
-
-  return sorted.map(({ date, balance }) => ({
-    date,
-    pct: ((balance - firstBalance) / Math.abs(firstBalance)) * 100,
-  }));
+  const first = sorted[0].balance;
+  if (first === 0) return [];
+  return sorted.map(({ date, balance }) => ({ date, pct: ((balance - first) / Math.abs(first)) * 100 }));
 }
 
 function mergeSeries(
@@ -173,52 +143,55 @@ function mergeSeries(
 ): { date: string; portfolio?: number; sp500?: number }[] {
   const map = new Map<string, { portfolio?: number; sp500?: number }>();
   for (const p of portfolio) map.set(p.date, { portfolio: p.pct });
-  for (const s of sp500) {
-    const existing = map.get(s.date) ?? {};
-    map.set(s.date, { ...existing, sp500: s.pct });
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, vals]) => ({ date, ...vals }));
+  for (const s of sp500) map.set(s.date, { ...map.get(s.date), sp500: s.pct });
+  return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date, ...v }));
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── RangePicker ──────────────────────────────────────────────────────────────
 
-function StatCard({ label, pct, dot }: { label: string; pct: number | null; dot: string }) {
+function RangePicker({ value, onChange }: { value: TimeRange; onChange: (r: TimeRange) => void }) {
   return (
-    <div
-      style={{
-        background: theme.tableBackground,
-        borderRadius: 10,
-        padding: '14px 20px',
-        minWidth: 160,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: dot, flexShrink: 0 }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: theme.pageText }}>{label}</span>
-      </div>
-      {pct == null ? (
-        <span style={{ fontSize: 20, fontWeight: 700, color: theme.pageTextSubdued }}>—</span>
-      ) : (
-        <span style={{ fontSize: 20, fontWeight: 700, color: pct >= 0 ? theme.noticeTextLight : theme.errorText }}>
-          {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
-        </span>
-      )}
+    <div style={{ display: 'flex', gap: 2, backgroundColor: theme.tableBackground, borderRadius: 8, padding: 3 }}>
+      {(Object.keys(RANGE_LABELS) as TimeRange[]).map(r => (
+        <button
+          key={r}
+          onClick={() => onChange(r)}
+          style={{
+            padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 600,
+            backgroundColor: value === r ? theme.cardBackground : 'transparent',
+            color: value === r ? theme.pageText : theme.pageTextSubdued,
+            boxShadow: value === r ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+          }}
+        >
+          {RANGE_LABELS[r]}
+        </button>
+      ))}
     </div>
   );
 }
 
-function AllocationSection({
-  accountData,
-}: {
-  accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[];
-}) {
+// ─── StatCard ─────────────────────────────────────────────────────────────────
+
+function StatCard({ label, pct, dot }: { label: string; pct: number | null; dot: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: theme.tableBackground, borderRadius: 10, minWidth: 180 }}>
+      <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: dot, flexShrink: 0 }} />
+      <div>
+        <div style={{ fontSize: 12, color: theme.pageTextSubdued, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: pct == null ? theme.pageTextSubdued : pct >= 0 ? theme.noticeTextLight : theme.errorText }}>
+          {pct == null ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AllocationSection ────────────────────────────────────────────────────────
+
+function AllocationSection({ accountData }: { accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[] }) {
   const rows = accountData
-    .map(({ account, holdings }) => ({
-      name: account.name,
-      value: holdings.reduce((s, h) => s + holdingValue(h), 0),
-    }))
+    .map(({ account, holdings }) => ({ name: account.name, value: holdings.reduce((s, h) => s + holdingValueCents(h), 0) }))
     .filter(r => r.value > 0)
     .sort((a, b) => b.value - a.value);
 
@@ -227,33 +200,35 @@ function AllocationSection({
 
   return (
     <View style={{ background: theme.cardBackground, borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', marginBottom: 24 }}>
-      <div style={{ fontWeight: 700, fontSize: 15, color: theme.pageText, marginBottom: 16 }}>Portfolio allocation</div>
-      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div style={{ fontWeight: 700, fontSize: 15, color: theme.pageText, marginBottom: 20 }}>Portfolio allocation</div>
+      <div style={{ display: 'flex', gap: 40, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        {/* Bars */}
         <div style={{ flex: 1, minWidth: 200 }}>
           {rows.map((row, i) => {
             const pct = (row.value / total) * 100;
             return (
-              <div key={row.name} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12, color: theme.pageTextSubdued }}>
-                  <span>{row.name}</span>
+              <div key={row.name} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 12, color: theme.pageTextSubdued }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{row.name}</span>
                   <span>{pct.toFixed(1)}%</span>
                 </div>
-                <div style={{ height: 8, borderRadius: 4, background: theme.tableBackground, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, borderRadius: 4, background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                <div style={{ height: 10, borderRadius: 5, background: theme.tableBackground, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, borderRadius: 5, background: ALLOC_COLORS[i % ALLOC_COLORS.length] }} />
                 </div>
               </div>
             );
           })}
         </div>
-        <div style={{ minWidth: 240 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px 16px', fontSize: 13 }}>
-            <span style={{ color: theme.pageTextSubdued, fontWeight: 600 }}>Account</span>
-            <span style={{ color: theme.pageTextSubdued, fontWeight: 600, textAlign: 'right' }}>%</span>
-            <span style={{ color: theme.pageTextSubdued, fontWeight: 600, textAlign: 'right' }}>Value</span>
+        {/* Table */}
+        <div style={{ minWidth: 280 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 110px', gap: '8px 12px', fontSize: 13 }}>
+            <span style={{ color: theme.pageTextSubdued, fontWeight: 600, fontSize: 12 }}>Account</span>
+            <span style={{ color: theme.pageTextSubdued, fontWeight: 600, fontSize: 12, textAlign: 'right' }}>%</span>
+            <span style={{ color: theme.pageTextSubdued, fontWeight: 600, fontSize: 12, textAlign: 'right' }}>Value</span>
             {rows.map((row, i) => (
               <React.Fragment key={row.name}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: CHART_COLORS[i % CHART_COLORS.length], flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: ALLOC_COLORS[i % ALLOC_COLORS.length], flexShrink: 0 }} />
                   <span style={{ color: theme.pageText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
                 </div>
                 <span style={{ color: theme.pageText, textAlign: 'right' }}>{((row.value / total) * 100).toFixed(1)}%</span>
@@ -271,14 +246,12 @@ function AllocationSection({
   );
 }
 
-function HoldingsSection({
-  accountData,
-}: {
-  accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[];
-}) {
+// ─── HoldingsSection ──────────────────────────────────────────────────────────
+
+function HoldingsSection({ accountData }: { accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[] }) {
   const allHoldings = accountData
     .flatMap(({ account, holdings }) => holdings.map(h => ({ ...h, accountName: account.name })))
-    .sort((a, b) => holdingValue(b) - holdingValue(a));
+    .sort((a, b) => holdingValueCents(b) - holdingValueCents(a));
 
   if (allHoldings.length === 0) {
     return (
@@ -288,50 +261,50 @@ function HoldingsSection({
     );
   }
 
+  const cols = '70px 1fr 160px 90px 80px 110px 120px';
+
   return (
     <View style={{ background: theme.cardBackground, borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 80px 80px 110px 120px', padding: '10px 20px', borderBottom: `1px solid ${theme.tableBorder}`, fontSize: 12, fontWeight: 600, color: theme.pageTextSubdued }}>
+      {/* Header */}
+      <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 20px', borderBottom: `1px solid ${theme.tableBorder}`, fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         <span>Symbol</span>
         <span>Name</span>
         <span>Account</span>
         <span style={{ textAlign: 'right' }}>Shares</span>
         <span style={{ textAlign: 'right' }}>Price</span>
         <span style={{ textAlign: 'right' }}>Value</span>
-        <span style={{ textAlign: 'right' }}>Gain/Loss</span>
+        <span style={{ textAlign: 'right' }}>Gain / Loss</span>
       </div>
       {allHoldings.map(h => {
-        const value = holdingValue(h);
-        const costBasis = h.cost_basis_per_share != null
-          ? Math.round(h.shares * h.cost_basis_per_share * 100)
-          : null;
+        const value = holdingValueCents(h);
+        const costBasis = h.cost_basis_per_share != null ? Math.round(h.shares * h.cost_basis_per_share * 100) : null;
         const gainLoss = costBasis != null && costBasis > 0 ? value - costBasis : null;
-        const gainPct = gainLoss != null && costBasis != null && costBasis > 0
-          ? (gainLoss / costBasis) * 100
-          : null;
+        const gainPct = gainLoss != null && costBasis ? (gainLoss / costBasis) * 100 : null;
 
         return (
-          <div
-            key={h.id}
-            style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 80px 80px 110px 120px', padding: '12px 20px', borderBottom: `1px solid ${theme.tableBorder}`, fontSize: 13, alignItems: 'center' }}
-          >
-            <span style={{ fontWeight: 600, color: theme.pageText }}>{h.symbol}</span>
-            <span style={{ color: theme.pageTextSubdued, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>{h.name ?? h.symbol}</span>
-            <span style={{ color: theme.pageTextSubdued, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>{h.accountName}</span>
-            <span style={{ textAlign: 'right', color: theme.pageText }}>{h.shares.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+          <div key={h.id} style={{ display: 'grid', gridTemplateColumns: cols, padding: '11px 20px', borderBottom: `1px solid ${theme.tableBorder}`, fontSize: 13, alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, color: theme.pageText }}>{h.symbol}</span>
+            <span style={{ color: theme.pageTextSubdued, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 10 }}>{h.name ?? h.symbol}</span>
+            <span style={{ color: theme.pageTextSubdued, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 10, fontSize: 12 }}>{h.accountName}</span>
+            <span style={{ textAlign: 'right', color: theme.pageText }}>{h.shares.toLocaleString(undefined, { maximumFractionDigits: 3 })}</span>
             <span style={{ textAlign: 'right', color: theme.pageText }}>{h.current_price != null ? `$${h.current_price.toFixed(2)}` : '—'}</span>
-            <span style={{ textAlign: 'right', fontWeight: 500, color: theme.pageText }}>{value > 0 ? `$${integerToCurrency(value)}` : '—'}</span>
-            <span style={{ textAlign: 'right', color: gainLoss == null ? theme.pageTextSubdued : gainLoss >= 0 ? theme.noticeTextLight : theme.errorText }}>
-              {gainLoss == null ? '—' : (
-                <span>
-                  {gainLoss >= 0 ? '+' : '-'}${integerToCurrency(Math.abs(gainLoss))}
+            <span style={{ textAlign: 'right', fontWeight: 600, color: theme.pageText }}>{value > 0 ? `$${integerToCurrency(value)}` : '—'}</span>
+            <div style={{ textAlign: 'right' }}>
+              {gainLoss == null ? (
+                <span style={{ color: theme.pageTextSubdued }}>—</span>
+              ) : (
+                <>
+                  <div style={{ color: gainLoss >= 0 ? theme.noticeTextLight : theme.errorText, fontWeight: 600 }}>
+                    {gainLoss >= 0 ? '+' : '-'}${integerToCurrency(Math.abs(gainLoss))}
+                  </div>
                   {gainPct != null && (
-                    <span style={{ fontSize: 11, marginLeft: 4, display: 'block' }}>
-                      ({gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%)
-                    </span>
+                    <div style={{ fontSize: 11, color: gainLoss >= 0 ? theme.noticeTextLight : theme.errorText }}>
+                      {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%
+                    </div>
                   )}
-                </span>
+                </>
               )}
-            </span>
+            </div>
           </div>
         );
       })}
@@ -350,105 +323,88 @@ export function InvestmentsDashboard() {
   );
 
   const accountData = useAllAccountData(investmentAccounts);
-  const sp500Data = useSP500Chart(range);
+  const sp500Data   = useSP500Chart(range);
 
-  const portfolioSeries = useMemo(
-    () => buildPortfolioSeries(accountData, range),
-    [accountData, range],
-  );
-
-  const chartData = useMemo(
-    () => mergeSeries(portfolioSeries, sp500Data),
-    [portfolioSeries, sp500Data],
-  );
+  const portfolioSeries = useMemo(() => buildPortfolioSeries(accountData, range), [accountData, range]);
+  const chartData       = useMemo(() => mergeSeries(portfolioSeries, sp500Data), [portfolioSeries, sp500Data]);
 
   const portfolioPct = portfolioSeries.length >= 2 ? portfolioSeries[portfolioSeries.length - 1].pct : null;
-  const sp500Pct = sp500Data.length >= 2 ? sp500Data[sp500Data.length - 1].pct : null;
+  const sp500Pct     = sp500Data.length >= 2 ? sp500Data[sp500Data.length - 1].pct : null;
 
-  const totalPortfolioValue = useMemo(
-    () => accountData.reduce((sum, { holdings }) => sum + holdings.reduce((s, h) => s + holdingValue(h), 0), 0),
+  const totalValue = useMemo(
+    () => accountData.reduce((sum, { holdings }) => sum + holdings.reduce((s, h) => s + holdingValueCents(h), 0), 0),
     [accountData],
   );
 
-  const formatDateTick = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const fmtDate = (d: string) => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   return (
-    <View style={{ padding: '24px 32px', maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: theme.pageText }}>Investments</div>
-          {totalPortfolioValue > 0 && (
-            <div style={{ fontSize: 28, fontWeight: 700, color: theme.pageText, marginTop: 4 }}>
-              ${integerToCurrency(totalPortfolioValue)}
-            </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 4, backgroundColor: theme.tableBackground, borderRadius: 8, padding: 4 }}>
-          {(Object.keys(RANGE_LABELS) as TimeRange[]).map(r => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              style={{
-                padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 600,
-                backgroundColor: range === r ? theme.cardBackground : 'transparent',
-                color: range === r ? theme.pageText : theme.pageTextSubdued,
-                boxShadow: range === r ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              {RANGE_LABELS[r]}
-            </button>
-          ))}
-        </div>
+    <View style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
+      {/* Page header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}>Investments</div>
+        {totalValue > 0 && (
+          <div style={{ fontSize: 30, fontWeight: 700, color: theme.pageText, marginTop: 2 }}>
+            ${integerToCurrency(totalValue)}
+          </div>
+        )}
       </div>
 
-      {/* Performance chart */}
+      {/* Performance card */}
       <View style={{ background: theme.cardBackground, borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: theme.pageText, marginBottom: 16 }}>
-          Performance vs S&amp;P 500
-        </div>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <StatCard label="Your Portfolio" pct={portfolioPct} dot={PORTFOLIO_COLOR} />
-          <StatCard label="S&P 500 (SPY)" pct={sp500Pct} dot={SP500_COLOR} />
+        {/* Card header with range picker */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, color: theme.pageText }}>Performance vs S&amp;P 500</span>
+          <RangePicker value={range} onChange={setRange} />
         </div>
 
+        {/* Stat cards */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          <StatCard label="Your Portfolio" pct={portfolioPct} dot={PORTFOLIO_COLOR} />
+          <StatCard label="S&P 500 (SPY)"  pct={sp500Pct}    dot={SP500_COLOR} />
+        </div>
+
+        {/* Chart */}
         {chartData.length > 1 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={theme.tableBorder} vertical={false} />
               <XAxis
                 dataKey="date"
-                tickFormatter={formatDateTick}
+                tickFormatter={fmtDate}
                 tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                minTickGap={40}
               />
               <YAxis
                 tickFormatter={v => `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
                 tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
                 tickLine={false}
                 axisLine={false}
-                width={55}
+                width={58}
               />
-              <ReferenceLine y={0} stroke={theme.tableBorder} />
+              <ReferenceLine y={0} stroke={theme.tableBorder} strokeWidth={1} />
               <Tooltip
                 contentStyle={{ background: theme.cardBackground, border: `1px solid ${theme.tableBorder}`, borderRadius: 8, fontSize: 12 }}
               />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              <Line type="monotone" dataKey="portfolio" name="Portfolio" stroke={PORTFOLIO_COLOR} strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="sp500" name="S&P 500" stroke={SP500_COLOR} strokeWidth={2} dot={false} connectNulls />
+              <Legend
+                formatter={name => name === 'portfolio' ? 'Portfolio' : 'S&P 500'}
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              />
+              <Line type="monotone" dataKey="portfolio" name="portfolio" stroke={PORTFOLIO_COLOR} strokeWidth={2} dot={false} connectNulls />
+              <Line type="monotone" dataKey="sp500"     name="sp500"     stroke={SP500_COLOR}     strokeWidth={2} dot={false} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.pageTextSubdued, fontSize: 14 }}>
+          <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.pageTextSubdued, fontSize: 14 }}>
             {investmentAccounts.length === 0
-              ? 'No investment accounts found. Create an investment account to get started.'
-              : 'Not enough balance history to show performance. Import balance history to enable this chart.'}
+              ? 'No investment accounts found.'
+              : 'Import balance history to see performance over time.'}
           </div>
         )}
       </View>
@@ -457,7 +413,9 @@ export function InvestmentsDashboard() {
       <AllocationSection accountData={accountData} />
 
       {/* Holdings */}
-      <div style={{ fontWeight: 700, fontSize: 15, color: theme.pageText, marginBottom: 12 }}>Holdings</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 15, color: theme.pageText }}>Holdings</span>
+      </div>
       <HoldingsSection accountData={accountData} />
     </View>
   );
