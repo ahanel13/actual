@@ -342,16 +342,48 @@ export function BalanceHistoryGraph({
                       </Text>
                     )}
 
-                    {hoveredValue && (
-                      <View>
-                        <Text style={{ fontWeight: 800 }}>
-                          {hoveredValue.date}
-                        </Text>
-                        <PrivacyFilter activationFilters={[() => !isHovered]}>
-                          <Text>{integerToCurrency(hoveredValue.balance)}</Text>
-                        </PrivacyFilter>
-                      </View>
-                    )}
+                    {hoveredValue &&
+                      (() => {
+                        const hoveredIndex = balanceData.findIndex(
+                          d => d.date === hoveredValue.date,
+                        );
+                        const previousValue =
+                          hoveredIndex > 0
+                            ? balanceData[hoveredIndex - 1]
+                            : null;
+                        const monthlyChange = previousValue
+                          ? hoveredValue.balance - previousValue.balance
+                          : null;
+                        return (
+                          <View>
+                            <Text style={{ fontWeight: 800 }}>
+                              {hoveredValue.date}
+                            </Text>
+                            <PrivacyFilter
+                              activationFilters={[() => !isHovered]}
+                            >
+                              <Text>
+                                {integerToCurrency(hoveredValue.balance)}
+                              </Text>
+                            </PrivacyFilter>
+                            {monthlyChange !== null && (
+                              <Text
+                                style={{
+                                  color:
+                                    monthlyChange >= 0
+                                      ? theme.noticeTextLight
+                                      : theme.errorText,
+                                  fontSize: 10,
+                                  marginTop: 2,
+                                }}
+                              >
+                                {monthlyChange >= 0 ? '+' : ''}
+                                {integerToCurrency(monthlyChange)}
+                              </Text>
+                            )}
+                          </View>
+                        );
+                      })()}
                   </SpaceBetween>
                 )}
               </div>

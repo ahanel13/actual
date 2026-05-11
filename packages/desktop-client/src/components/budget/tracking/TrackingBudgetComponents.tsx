@@ -19,7 +19,7 @@ import { css } from '@emotion/css';
 import { t } from 'i18next';
 
 import { BalanceWithCarryover } from '#components/budget/BalanceWithCarryover';
-import { makeAmountGrey } from '#components/budget/util';
+import { makeAmountFullStyle, makeAmountGrey } from '#components/budget/util';
 import { NotesButton } from '#components/NotesButton';
 import { CellValue, CellValueText } from '#components/spreadsheet/CellValue';
 import { Field, SheetCell } from '#components/table';
@@ -444,12 +444,13 @@ export const CategoryMonth = memo(function CategoryMonth({
             {props => (
               <CellValueText
                 {...props}
+                formatter={(val, type) => format(Math.abs(val as number), type)}
                 className={css({
                   cursor: 'pointer',
                   ':hover': {
                     textDecoration: 'underline',
                   },
-                  ...makeAmountGrey(props.value),
+                  ...makeAmountFullStyle(Number(props.value)),
                 })}
               />
             )}

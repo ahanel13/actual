@@ -10,18 +10,20 @@ import {
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { AccountEntity } from '@actual-app/core/types/models';
 import { q } from '@actual-app/core/shared/query';
+import type { AccountEntity } from '@actual-app/core/types/models';
 
-
+import { useMoveAccountMutation } from '#accounts';
 import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
 import { Link } from '#components/common/Link';
-import { useFormat } from '#hooks/useFormat';
+import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import { useAccounts } from '#hooks/useAccounts';
+import { useDragRef } from '#hooks/useDragRef';
+import { useFormat } from '#hooks/useFormat';
 import { useSheetValue } from '#hooks/useSheetValue';
 import { pushModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
 import { liveQuery } from '#queries/liveQuery';
+import { useDispatch } from '#redux';
 import * as bindings from '#spreadsheet/bindings';
 
 // ─── Group balance hook ───────────────────────────────────────────────────────
@@ -155,7 +157,9 @@ const GROUP_DEFS: GroupDef[] = [
     isLiability: true,
     color: '#f97316',
     match: a =>
-      a.type === 'mortgage' || a.type === 'loan' || a.type === 'other_liability',
+      a.type === 'mortgage' ||
+      a.type === 'loan' ||
+      a.type === 'other_liability',
   },
 ];
 
@@ -221,17 +225,10 @@ function FilterTabs({
             fontSize: 13,
             fontWeight: 600,
             backgroundColor:
-              value === tab.value
-                ? theme.cardBackground
-                : 'transparent',
-            color:
-              value === tab.value
-                ? theme.pageText
-                : theme.pageTextSubdued,
+              value === tab.value ? theme.cardBackground : 'transparent',
+            color: value === tab.value ? theme.pageText : theme.pageTextSubdued,
             boxShadow:
-              value === tab.value
-                ? '0 1px 3px rgba(0,0,0,0.1)'
-                : 'none',
+              value === tab.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           }}
         >
           {tab.label}
@@ -243,44 +240,91 @@ function FilterTabs({
 
 // ─── Account row ──────────────────────────────────────────────────────────────
 
-function AccountRow({ account }: { account: AccountEntity }) {
+type AccountRowProps = {
+  account: AccountEntity;
+  dragType: string;
+  onDragChange: (drag: { state: string }) => void;
+  onDrop: (
+    id: string,
+    dropPos: 'top' | 'bottom' | null,
+    targetId: string,
+  ) => void;
+};
+
+function AccountRow({
+  account,
+  dragType,
+  onDragChange,
+  onDrop,
+}: AccountRowProps) {
+  const { dragRef } = useDraggable({
+    type: dragType,
+    onDragChange,
+    item: { id: account.id },
+    canDrag: true,
+  });
+  const handleDragRef = useDragRef(dragRef);
+  const { dropRef, dropPos } = useDroppable({
+    types: [dragType],
+    id: account.id,
+    onDrop,
+  });
+
   return (
-    <Link
-      variant="internal"
-      to={`/accounts/${account.id}`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '10px 16px',
-        gap: 12,
-        borderBottom: `1px solid ${theme.tableBorder}`,
-        textDecoration: 'none',
-        color: theme.pageText,
-        ':hover': { backgroundColor: theme.tableRowBackgroundHover },
-      }}
-    >
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ fontWeight: 500, fontSize: 14 }}>{account.name}</View>
-        {account.official_name && (
-          <View style={{ fontSize: 12, color: theme.pageTextSubdued, marginTop: 1 }}>
-            {account.official_name}
+    <View innerRef={dropRef} style={{ position: 'relative' }}>
+      <DropHighlight pos={dropPos} />
+      <View innerRef={handleDragRef}>
+        <Link
+          variant="internal"
+          to={`/accounts/${account.id}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 16px',
+            gap: 12,
+            borderBottom: `1px solid ${theme.tableBorder}`,
+            textDecoration: 'none',
+            color: theme.pageText,
+            ':hover': { backgroundColor: theme.tableRowBackgroundHover },
+          }}
+        >
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ fontWeight: 500, fontSize: 14 }}>
+              {account.name}
+            </View>
+            {account.official_name && (
+              <View
+                style={{
+                  fontSize: 12,
+                  color: theme.pageTextSubdued,
+                  marginTop: 1,
+                }}
+              >
+                {account.official_name}
+              </View>
+            )}
           </View>
-        )}
-      </View>
 
-      <View style={{ width: 80, height: 28, flexShrink: 0 }}>
-        <BalanceHistoryGraph
-          accountId={account.id}
-          style={{ height: 28, margin: 0 }}
-          compact
-        />
-      </View>
+          <View style={{ width: 80, height: 28, flexShrink: 0 }}>
+            <BalanceHistoryGraph
+              accountId={account.id}
+              style={{ height: 28, margin: 0 }}
+              compact
+            />
+          </View>
 
-      <AccountBalance
-        accountId={account.id}
-        style={{ fontSize: 14, fontWeight: 500, minWidth: 80, textAlign: 'right' }}
-      />
-    </Link>
+          <AccountBalance
+            accountId={account.id}
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              minWidth: 80,
+              textAlign: 'right',
+            }}
+          />
+        </Link>
+      </View>
+    </View>
   );
 }
 
@@ -288,6 +332,29 @@ function AccountRow({ account }: { account: AccountEntity }) {
 
 function AccountGroup({ group }: { group: AccountGroup }) {
   const [collapsed, setCollapsed] = useState(false);
+  const groupBalance = useGroupBalance(group.accounts.map(a => a.id));
+  const format = useFormat();
+  const [isDragging, setIsDragging] = useState(false);
+  const moveAccount = useMoveAccountMutation();
+  const dragType = `overview-account-${group.label}`;
+
+  function onDragChange(drag: { state: string }) {
+    setIsDragging(drag.state === 'start');
+  }
+
+  function onReorder(
+    id: string,
+    dropPos: 'top' | 'bottom' | null,
+    targetId: string,
+  ) {
+    let targetIdToMove: string | null = targetId;
+    if (dropPos === 'bottom') {
+      const idx = group.accounts.findIndex(a => a.id === targetId) + 1;
+      targetIdToMove =
+        idx < group.accounts.length ? group.accounts[idx].id : null;
+    }
+    moveAccount.mutate({ id, targetId: targetIdToMove });
+  }
 
   return (
     <View
@@ -342,15 +409,34 @@ function AccountGroup({ group }: { group: AccountGroup }) {
         >
           <Trans>{group.label}</Trans>
         </View>
-        <View style={{ fontSize: 12, color: theme.pageTextSubdued }}>
-          {group.accounts.length}{' '}
-          {group.accounts.length === 1 ? 'account' : 'accounts'}
-        </View>
+        {collapsed ? (
+          <View
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: groupBalance < 0 ? theme.errorText : theme.noticeTextLight,
+            }}
+          >
+            {groupBalance < 0 ? '-' : ''}$
+            {format(Math.abs(groupBalance), 'financial')}
+          </View>
+        ) : (
+          <View style={{ fontSize: 12, color: theme.pageTextSubdued }}>
+            {group.accounts.length}{' '}
+            {group.accounts.length === 1 ? 'account' : 'accounts'}
+          </View>
+        )}
       </button>
 
       {!collapsed &&
         group.accounts.map(account => (
-          <AccountRow key={account.id} account={account} />
+          <AccountRow
+            key={account.id}
+            account={account}
+            dragType={dragType}
+            onDragChange={onDragChange}
+            onDrop={onReorder}
+          />
         ))}
     </View>
   );
@@ -429,7 +515,13 @@ function SummaryGroupRow({ group }: { group: AccountGroup }) {
   );
 }
 
-function SectionTotal({ groups, isLiability }: { groups: AccountGroup[]; isLiability: boolean }) {
+function SectionTotal({
+  groups,
+  isLiability,
+}: {
+  groups: AccountGroup[];
+  isLiability: boolean;
+}) {
   const allIds = groups.flatMap(g => g.accounts.map(a => a.id));
   const total = useGroupBalance(allIds);
   const format = useFormat();
@@ -526,14 +618,32 @@ export function AccountsOverviewPage() {
       }}
     >
       {/* Header */}
-      <View style={{ fontSize: 22, fontWeight: 700, color: theme.pageText, marginBottom: 16 }}>
+      <View
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color: theme.pageText,
+          marginBottom: 16,
+        }}
+      >
         <Trans>Accounts</Trans>
       </View>
 
       {/* Filter tabs + Add account button on same row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
+      >
         <FilterTabs value={budgetFilter} onChange={setBudgetFilter} inline />
-        <Button variant="primary" onPress={onAddAccount} style={{ flexShrink: 0 }}>
+        <Button
+          variant="primary"
+          onPress={onAddAccount}
+          style={{ flexShrink: 0 }}
+        >
           + <Trans>Add account</Trans>
         </Button>
       </View>
@@ -568,9 +678,7 @@ export function AccountsOverviewPage() {
       </View>
 
       {/* Two-column layout */}
-      <View
-        style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}
-      >
+      <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}>
         {/* Account groups */}
         <View style={{ flex: 1, minWidth: 0 }}>
           {groups.length === 0 ? (

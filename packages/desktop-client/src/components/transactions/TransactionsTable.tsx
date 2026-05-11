@@ -1505,6 +1505,29 @@ const Transaction = memo(function Transaction({
               }
               return '';
             }}
+            unexposedContent={({ value: acctId, formatter }) => (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  if (acctId) onNavigateToTransferAccount(acctId);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  textAlign: 'left',
+                  font: 'inherit',
+                  color: 'inherit',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  width: '100%',
+                }}
+              >
+                {formatter?.(acctId ?? '') ?? acctId}
+              </button>
+            )}
             valueStyle={valueStyle}
             exposed={focusedField === 'account'}
             onExpose={name => !isPreview && onEdit(id, name)}
@@ -1790,13 +1813,13 @@ const Transaction = memo(function Transaction({
           valueStyle={{
             ...valueStyle,
             color:
-              transaction.amount > 0
-                ? theme.numberPositive
-                : theme.pageText,
+              transaction.amount > 0 ? theme.numberPositive : theme.pageText,
           }}
           textAlign="right"
           title={credit !== '' ? credit : debit}
-          onExpose={name => !isPreview && onEdit(id, credit !== '' ? 'credit' : 'debit')}
+          onExpose={name =>
+            !isPreview && onEdit(id, credit !== '' ? 'credit' : 'debit')
+          }
           style={{
             ...(isParent && { fontStyle: 'italic' }),
             ...styles.tnum,

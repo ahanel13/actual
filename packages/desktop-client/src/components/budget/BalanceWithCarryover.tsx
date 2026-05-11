@@ -275,6 +275,7 @@ export function BalanceWithCarryover({
                 type={type}
                 name={name}
                 value={balanceValue}
+                formatter={(val, t) => format(Math.abs(val as number), t)}
                 className={getDefaultClassName(balanceValue)}
               />
             )}

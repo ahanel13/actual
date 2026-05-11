@@ -48,7 +48,10 @@ export const accountNameStyle: CSSProperties = {
   borderRadius: 8,
   textDecoration: 'none',
   color: theme.sidebarItemText,
-  ':hover': { backgroundColor: theme.sidebarItemBackgroundHover, borderRadius: 8 },
+  ':hover': {
+    backgroundColor: theme.sidebarItemBackgroundHover,
+    borderRadius: 8,
+  },
   ...styles.smallText,
 };
 
