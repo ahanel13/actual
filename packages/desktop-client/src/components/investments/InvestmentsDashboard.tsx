@@ -312,10 +312,45 @@ function HoldingsSection({ accountData }: { accountData: { account: AccountEntit
   );
 }
 
+// ─── ViewTabs ─────────────────────────────────────────────────────────────────
+
+type ActiveView = 'performance' | 'allocation';
+
+function ViewTabs({ value, onChange }: { value: ActiveView; onChange: (v: ActiveView) => void }) {
+  const tabs: { value: ActiveView; label: string }[] = [
+    { value: 'performance', label: 'Performance' },
+    { value: 'allocation',  label: 'Allocation' },
+  ];
+  return (
+    <div style={{ display: 'flex', gap: 0 }}>
+      {tabs.map(tab => (
+        <button
+          key={tab.value}
+          onClick={() => onChange(tab.value)}
+          style={{
+            padding: '8px 18px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            color: value === tab.value ? theme.pageText : theme.pageTextSubdued,
+            borderBottom: value === tab.value ? `2px solid ${PORTFOLIO_COLOR}` : '2px solid transparent',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function InvestmentsDashboard() {
   const [range, setRange] = useState<TimeRange>('3mo');
+  const [view, setView] = useState<ActiveView>('performance');
   const { data: allAccounts = [] } = useAccounts();
   const investmentAccounts = useMemo(
     () => allAccounts.filter(a => a.type === 'investment' && !a.closed && !a.tombstone),
@@ -344,7 +379,7 @@ export function InvestmentsDashboard() {
   return (
     <View style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
       {/* Page header */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 4 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}>Investments</div>
         {totalValue > 0 && (
           <div style={{ fontSize: 30, fontWeight: 700, color: theme.pageText, marginTop: 2 }}>
@@ -353,7 +388,13 @@ export function InvestmentsDashboard() {
         )}
       </div>
 
+      {/* Tab bar */}
+      <div style={{ marginBottom: 20, borderBottom: `1px solid ${theme.tableBorder}` }}>
+        <ViewTabs value={view} onChange={setView} />
+      </div>
+
       {/* Performance card */}
+      {view === 'performance' && (
       <View style={{ background: theme.cardBackground, borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', padding: '20px 24px', marginBottom: 24 }}>
         {/* Card header with range picker */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -409,10 +450,14 @@ export function InvestmentsDashboard() {
         )}
       </View>
 
-      {/* Allocation */}
-      <AllocationSection accountData={accountData} />
+      )}
 
-      {/* Holdings */}
+      {/* Allocation tab content */}
+      {view === 'allocation' && (
+        <AllocationSection accountData={accountData} />
+      )}
+
+      {/* Holdings — always visible */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <span style={{ fontWeight: 700, fontSize: 15, color: theme.pageText }}>Holdings</span>
       </div>
