@@ -1,7 +1,7 @@
 // @ts-strict-ignore
 import React, { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -46,6 +46,7 @@ import { TrackingBudgetProvider } from './tracking/TrackingBudgetContext';
 import { prewarmAllMonths, prewarmMonth } from './util';
 
 export function Budget() {
+  const { t } = useTranslation();
   const currentMonth = monthUtils.currentMonth();
   const spreadsheet = useSpreadsheet();
   const navigate = useNavigate();
@@ -288,7 +289,7 @@ export function Budget() {
           </Text>
           <Button
             variant="bare"
-            aria-label="Previous month"
+            aria-label={t("Previous month")}
             onPress={() =>
               onMonthSelect(monthUtils.prevMonth(startMonth), maxMonths)
             }
@@ -298,7 +299,7 @@ export function Budget() {
           </Button>
           <Button
             variant="bare"
-            aria-label="Next month"
+            aria-label={t("Next month")}
             onPress={() =>
               onMonthSelect(monthUtils.nextMonth(startMonth), maxMonths)
             }
@@ -319,7 +320,7 @@ export function Budget() {
                 fontSize: 13,
               }}
             >
-              Today
+              <Trans>Today</Trans>
             </Button>
           )}
 
@@ -338,13 +339,12 @@ export function Budget() {
                 fontWeight: 600,
                 color: theme.sidebarItemAccentSelected,
                 paddingBottom: 2,
-                borderBottom:
-                  '2px solid ' + theme.sidebarItemAccentSelected,
+                borderBottom: '2px solid ' + theme.sidebarItemAccentSelected,
                 cursor: 'default',
               }}
-            >
+            ><Trans>
               Budget
-            </View>
+            </Trans></View>
             <View
               style={{
                 fontSize: 14,
@@ -354,9 +354,9 @@ export function Budget() {
                 marginLeft: 12,
                 cursor: 'default',
               }}
-            >
+            ><Trans>
               Forecast
-            </View>
+            </Trans></View>
           </View>
 
           {/* Spacer */}
@@ -377,9 +377,9 @@ export function Budget() {
               fontSize: 13,
             }}
           >
-            <SvgCog width={13} height={13} />
+            <SvgCog width={13} height={13} /><Trans>
             Settings
-          </Button>
+          </Trans></Button>
         </View>
         <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
           <View style={{ flex: 1, overflow: 'hidden' }}>{table}</View>
