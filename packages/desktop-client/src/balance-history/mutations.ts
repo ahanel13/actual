@@ -2,9 +2,12 @@ import { send } from '@actual-app/core/platform/client/connection';
 import type { BalanceHistoryEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { balanceHistoryQueryKey } from '../hooks/useBalanceHistory';
+import { balanceHistoryQueryKey } from '#hooks/useBalanceHistory';
 
-function invalidate(queryClient: ReturnType<typeof useQueryClient>, accountId: string) {
+function invalidate(
+  queryClient: ReturnType<typeof useQueryClient>,
+  accountId: string,
+) {
   void queryClient.invalidateQueries({
     queryKey: balanceHistoryQueryKey(accountId),
   });

@@ -2,7 +2,7 @@ import { send } from '@actual-app/core/platform/client/connection';
 import type { HoldingEntity } from '@actual-app/core/types/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { holdingQueryKey } from '../hooks/useHoldings';
+import { holdingQueryKey } from '#hooks/useHoldings';
 
 export function useCreateHoldingMutation(accountId: string) {
   const queryClient = useQueryClient();
