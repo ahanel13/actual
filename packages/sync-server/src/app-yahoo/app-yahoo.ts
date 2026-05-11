@@ -89,6 +89,66 @@ async function fetchQuote(symbol: string): Promise<{
   });
 }
 
+async function fetchChart(
+  symbol: string,
+  range: string,
+): Promise<{ timestamps: number[]; closes: number[] } | null> {
+  const ipv4 = await resolveIPv4(YAHOO_HOSTNAME);
+  const interval = range === '1mo' ? '1d' : '1d';
+  const path = `/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
+
+  return new Promise(resolve => {
+    const req = https.get(
+      {
+        hostname: ipv4,
+        path,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          Host: YAHOO_HOSTNAME,
+        },
+        servername: YAHOO_HOSTNAME,
+        timeout: 15_000,
+      },
+      res => {
+        let raw = '';
+        res.on('data', chunk => (raw += chunk));
+        res.on('end', () => {
+          try {
+            if (res.statusCode !== 200) { resolve(null); return; }
+            const data = JSON.parse(raw) as {
+              chart?: {
+                result?: Array<{
+                  timestamp?: number[];
+                  indicators?: { quote?: Array<{ close?: number[] }> };
+                }>;
+              };
+            };
+            const result = data?.chart?.result?.[0];
+            const timestamps = result?.timestamp ?? [];
+            const closes = result?.indicators?.quote?.[0]?.close ?? [];
+            if (timestamps.length === 0) { resolve(null); return; }
+            resolve({ timestamps, closes });
+          } catch {
+            resolve(null);
+          }
+        });
+      },
+    );
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.on('error', () => resolve(null));
+  });
+}
+
+app.post('/chart', async (req, res) => {
+  const { symbol, range = '1y' } = req.body as { symbol: string; range?: string };
+  if (!symbol) {
+    res.status(400).json({ error: 'symbol is required' });
+    return;
+  }
+  const data = await fetchChart(symbol, range);
+  res.json({ status: 'ok', data });
+});
+
 app.post('/quote', async (req, res) => {
   const { symbols } = req.body as { symbols: string[] };
 

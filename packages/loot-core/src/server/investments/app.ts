@@ -6,7 +6,11 @@ import { mutator } from '#server/mutators';
 import { post } from '#server/post';
 import { getServer } from '#server/server-config';
 import * as monthUtils from '#shared/months';
-import type { HoldingEntity, HoldingWithPrice, PriceCacheEntry } from '#types/models';
+import type {
+  HoldingEntity,
+  HoldingWithPrice,
+  PriceCacheEntry,
+} from '#types/models';
 
 export type InvestmentsHandlers = {
   'holdings-get': typeof getHoldings;
@@ -14,6 +18,7 @@ export type InvestmentsHandlers = {
   'holdings-update': typeof updateHolding;
   'holdings-delete': typeof deleteHolding;
   'prices-refresh': typeof refreshPrices;
+  'yahoo-chart': typeof fetchYahooChart;
 };
 
 export const app = createApp<InvestmentsHandlers>();
@@ -22,6 +27,7 @@ app.method('holdings-create', mutator(createHolding));
 app.method('holdings-update', mutator(updateHolding));
 app.method('holdings-delete', mutator(deleteHolding));
 app.method('prices-refresh', mutator(refreshPrices));
+app.method('yahoo-chart', fetchYahooChart);
 
 async function getHoldings({
   accountId,
@@ -89,10 +95,7 @@ async function updateHolding(
   if (fields.length === 0) return;
 
   params.push(holding.id);
-  await db.run(
-    `UPDATE holdings SET ${fields.join(', ')} WHERE id = ?`,
-    params,
-  );
+  await db.run(`UPDATE holdings SET ${fields.join(', ')} WHERE id = ?`, params);
 }
 
 async function deleteHolding({ id }: { id: string }): Promise<void> {
@@ -187,4 +190,29 @@ async function refreshPrices({
     ...h,
     current_price: priceMap.get(h.symbol) ?? null,
   }));
+}
+
+async function fetchYahooChart({
+  symbol,
+  range = '1y',
+}: {
+  symbol: string;
+  range?: string;
+}): Promise<{ timestamps: number[]; closes: number[] } | null> {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) return null;
+
+  const serverConfig = getServer();
+  if (!serverConfig) return null;
+
+  try {
+    const result = await post(
+      serverConfig.YAHOO_SERVER + '/chart',
+      { symbol, range },
+      { 'X-ACTUAL-TOKEN': userToken },
+    );
+    return result ?? null;
+  } catch {
+    return null;
+  }
 }

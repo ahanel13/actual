@@ -1,6 +1,7 @@
 export { BudgetPage as Budget } from '#components/mobile/budget/BudgetPage';
 
 export { AccountsPage as Accounts } from '#components/mobile/accounts/AccountsPage';
+export { InvestmentsDashboard as Investments } from '#components/investments/InvestmentsDashboard';
 export { AccountPage as Account } from '#components/mobile/accounts/AccountPage';
 export { AccountsPage as Transactions } from '#components/mobile/accounts/AccountsPage';
 

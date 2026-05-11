@@ -258,6 +258,11 @@ export function FinancesApp() {
                 <Route path="/reports/*" element={<Reports />} />
 
                 <Route
+                  path="/investments"
+                  element={<NarrowAlternate name="Investments" />}
+                />
+
+                <Route
                   path="/budget"
                   element={<NarrowAlternate name="Budget" />}
                 />
