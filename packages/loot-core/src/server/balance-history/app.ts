@@ -1,10 +1,10 @@
 // @ts-strict-ignore
 import { stringify as csvStringify } from 'csv-stringify/sync';
-import { v4 as uuidv4 } from 'uuid';
 
 import { createApp } from '#server/app';
 import * as db from '#server/db';
 import { mutator } from '#server/mutators';
+import { batchMessages } from '#server/sync';
 import type { BalanceHistoryEntity } from '#types/models';
 
 export type BalanceHistoryHandlers = {
@@ -59,19 +59,19 @@ async function createSnapshot(
   );
 
   if (existing) {
-    await db.run(
-      'UPDATE balance_history SET balance = ? WHERE id = ?',
-      [snapshot.balance, existing.id],
-    );
+    await db.update('balance_history', {
+      id: existing.id,
+      balance: snapshot.balance,
+    });
     return existing.id;
   }
 
-  const id = uuidv4();
-  await db.run(
-    'INSERT INTO balance_history (id, account_id, date, balance, tombstone) VALUES (?, ?, ?, ?, 0)',
-    [id, snapshot.account_id, snapshot.date, snapshot.balance],
-  );
-  return id;
+  return db.insertWithUUID('balance_history', {
+    account_id: snapshot.account_id,
+    date: snapshot.date,
+    balance: snapshot.balance,
+    tombstone: 0,
+  });
 }
 
 async function updateSnapshot(
@@ -91,15 +91,14 @@ async function updateSnapshot(
 
   if (fields.length === 0) return;
 
-  params.push(snapshot.id);
-  await db.run(
-    `UPDATE balance_history SET ${fields.join(', ')} WHERE id = ?`,
-    params,
-  );
+  const patch: Record<string, string | number> = { id: snapshot.id };
+  if (snapshot.date !== undefined) patch.date = snapshot.date;
+  if (snapshot.balance !== undefined) patch.balance = snapshot.balance;
+  await db.update('balance_history', patch);
 }
 
 async function deleteSnapshot({ id }: { id: string }): Promise<void> {
-  await db.run('UPDATE balance_history SET tombstone = 1 WHERE id = ?', [id]);
+  await db.delete_('balance_history', id);
 }
 
 async function importSnapshots({
@@ -112,27 +111,30 @@ async function importSnapshots({
   let inserted = 0;
   let updated = 0;
 
-  for (const row of rows) {
-    const existing = await db.first<{ id: string }>(
-      'SELECT id FROM balance_history WHERE account_id = ? AND date = ? AND tombstone = 0',
-      [accountId, row.date],
-    );
+  await batchMessages(async () => {
+    for (const row of rows) {
+      const existing = await db.first<{ id: string }>(
+        'SELECT id FROM balance_history WHERE account_id = ? AND date = ? AND tombstone = 0',
+        [accountId, row.date],
+      );
 
-    if (existing) {
-      await db.run(
-        'UPDATE balance_history SET balance = ? WHERE id = ?',
-        [row.balance, existing.id],
-      );
-      updated++;
-    } else {
-      const id = uuidv4();
-      await db.run(
-        'INSERT INTO balance_history (id, account_id, date, balance, tombstone) VALUES (?, ?, ?, ?, 0)',
-        [id, accountId, row.date, row.balance],
-      );
-      inserted++;
+      if (existing) {
+        await db.update('balance_history', {
+          id: existing.id,
+          balance: row.balance,
+        });
+        updated++;
+      } else {
+        await db.insertWithUUID('balance_history', {
+          account_id: accountId,
+          date: row.date,
+          balance: row.balance,
+          tombstone: 0,
+        });
+        inserted++;
+      }
     }
-  }
+  });
 
   return { inserted, updated };
 }

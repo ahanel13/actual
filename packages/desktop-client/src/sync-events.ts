@@ -90,6 +90,14 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           queryKey: accountQueries.lists(),
         });
       }
+
+      if (tables.includes('holdings')) {
+        void queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      }
+
+      if (tables.includes('balance_history')) {
+        void queryClient.invalidateQueries({ queryKey: ['balance-history'] });
+      }
     } else if (event.type === 'error') {
       let notif: Notification | null = null;
       const learnMore = `[${t('Learn more')}](https://actualbudget.org/docs/getting-started/sync/#debugging-sync-issues)`;

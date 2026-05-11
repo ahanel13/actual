@@ -5,6 +5,7 @@ import * as db from '#server/db';
 import { mutator } from '#server/mutators';
 import { post } from '#server/post';
 import { getServer } from '#server/server-config';
+import { batchMessages } from '#server/sync';
 import * as monthUtils from '#shared/months';
 import type {
   HoldingEntity,
@@ -47,59 +48,36 @@ async function getHoldings({
 async function createHolding(
   holding: Omit<HoldingEntity, 'id'>,
 ): Promise<string> {
-  const { v4: uuidv4 } = await import('uuid');
-  const id = uuidv4();
-  await db.run(
-    `INSERT INTO holdings (id, account_id, symbol, name, shares, cost_basis_per_share, currency, tombstone)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
-    [
-      id,
-      holding.account_id,
-      holding.symbol.toUpperCase(),
-      holding.name ?? null,
-      holding.shares,
-      holding.cost_basis_per_share ?? null,
-      holding.currency ?? 'USD',
-    ],
-  );
-  return id;
+  return db.insertWithUUID('holdings', {
+    account_id: holding.account_id,
+    symbol: holding.symbol.toUpperCase(),
+    name: holding.name ?? null,
+    shares: holding.shares,
+    cost_basis_per_share: holding.cost_basis_per_share ?? null,
+    currency: holding.currency ?? 'USD',
+    tombstone: 0,
+  });
 }
 
 async function updateHolding(
   holding: Partial<HoldingEntity> & { id: string },
 ): Promise<void> {
-  const fields: string[] = [];
-  const params: (string | number | null)[] = [];
+  const patch: Record<string, string | number | null> = { id: holding.id };
 
-  if (holding.symbol !== undefined) {
-    fields.push('symbol = ?');
-    params.push(holding.symbol.toUpperCase());
-  }
-  if (holding.name !== undefined) {
-    fields.push('name = ?');
-    params.push(holding.name ?? null);
-  }
-  if (holding.shares !== undefined) {
-    fields.push('shares = ?');
-    params.push(holding.shares);
-  }
-  if (holding.cost_basis_per_share !== undefined) {
-    fields.push('cost_basis_per_share = ?');
-    params.push(holding.cost_basis_per_share ?? null);
-  }
-  if (holding.currency !== undefined) {
-    fields.push('currency = ?');
-    params.push(holding.currency);
-  }
+  if (holding.symbol !== undefined) patch.symbol = holding.symbol.toUpperCase();
+  if (holding.name !== undefined) patch.name = holding.name ?? null;
+  if (holding.shares !== undefined) patch.shares = holding.shares;
+  if (holding.cost_basis_per_share !== undefined)
+    {patch.cost_basis_per_share = holding.cost_basis_per_share ?? null;}
+  if (holding.currency !== undefined) patch.currency = holding.currency;
 
-  if (fields.length === 0) return;
+  if (Object.keys(patch).length === 1) return; // only id — nothing to update
 
-  params.push(holding.id);
-  await db.run(`UPDATE holdings SET ${fields.join(', ')} WHERE id = ?`, params);
+  await db.update('holdings', patch);
 }
 
 async function deleteHolding({ id }: { id: string }): Promise<void> {
-  await db.run('UPDATE holdings SET tombstone = 1 WHERE id = ?', [id]);
+  await db.delete_('holdings', id);
 }
 
 async function refreshPrices({
