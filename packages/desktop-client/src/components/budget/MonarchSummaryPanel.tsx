@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import {
@@ -9,14 +9,14 @@ import {
 import { Popover } from '@actual-app/components/popover';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import type { CategoryGroupEntity } from '@actual-app/core/types/models';
 import * as monthUtils from '@actual-app/core/shared/months';
+import type { CategoryEntity, CategoryGroupEntity } from '@actual-app/core/types/models';
 
-import { FinancialText } from '#components/FinancialText';
-import { PrivacyFilter } from '#components/PrivacyFilter';
-import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { BudgetMonthMenu } from '#components/budget/envelope/budgetsummary/BudgetMonthMenu';
 import { ToBudget } from '#components/budget/envelope/budgetsummary/ToBudget';
+import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
+import { FinancialText } from '#components/FinancialText';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useLocale } from '#hooks/useLocale';
 import { useUndo } from '#hooks/useUndo';
@@ -30,9 +30,8 @@ function GroupBudgetReader({
   groupId: string;
   onValue: (id: string, val: number) => void;
 }) {
-  const value = (useEnvelopeSheetValue(
-    envelopeBudget.groupBudgeted(groupId),
-  ) ?? 0) as number;
+  const value = (useEnvelopeSheetValue(envelopeBudget.groupBudgeted(groupId)) ??
+    0) as number;
   useEffect(() => {
     onValue(groupId, value);
   }, [groupId, value, onValue]);
@@ -145,10 +144,14 @@ function SectionCard({
               gap: 3,
               fontSize: 12,
               fontWeight: 600,
-              color: isRemNegative ? theme.numberNegative : theme.numberPositive,
+              color: isRemNegative
+                ? theme.numberNegative
+                : theme.numberPositive,
             }}
           >
-            <FinancialText>{format(Math.abs(remaining), 'financial')}</FinancialText>
+            <FinancialText>
+              {format(Math.abs(remaining), 'financial')}
+            </FinancialText>
             <View style={{ fontWeight: 400, color: theme.pageTextLight }}>
               {t('remaining')}
             </View>
@@ -159,7 +162,28 @@ function SectionCard({
   );
 }
 
-// Reads its own sheet data and renders a SectionCard for an expense group
+function CategorySectionCard({ cat }: { cat: CategoryEntity }) {
+  const budget = (useEnvelopeSheetValue(
+    envelopeBudget.catBudgeted(cat.id),
+  ) ?? 0) as number;
+  const spent = (useEnvelopeSheetValue(
+    envelopeBudget.catSumAmount(cat.id),
+  ) ?? 0) as number;
+  const balance = (useEnvelopeSheetValue(
+    envelopeBudget.catBalance(cat.id),
+  ) ?? 0) as number;
+
+  return (
+    <SectionCard
+      label={cat.name}
+      budget={-budget}
+      actual={-spent}
+      remaining={balance}
+    />
+  );
+}
+
+// Reads its own sheet data and renders a group header + its categories
 function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
   const budget = (useEnvelopeSheetValue(
     envelopeBudget.groupBudgeted(group.id),
@@ -171,13 +195,24 @@ function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
     envelopeBudget.groupBalance(group.id),
   ) ?? 0) as number;
 
+  const visibleCategories = group.categories?.filter(c => !c.hidden) ?? [];
+
   return (
-    <SectionCard
-      label={group.name}
-      budget={-budget}
-      actual={-spent}
-      remaining={balance}
-    />
+    <>
+      <SectionCard
+        label={group.name}
+        budget={-budget}
+        actual={-spent}
+        remaining={balance}
+      />
+      {visibleCategories.length > 0 && (
+        <View style={{ paddingLeft: 12, marginTop: -4, marginBottom: 4 }}>
+          {visibleCategories.map(cat => (
+            <CategorySectionCard key={cat.id} cat={cat} />
+          ))}
+        </View>
+      )}
+    </>
   );
 }
 
@@ -227,14 +262,15 @@ export function MonarchSummaryPanel({
   );
 
   // Expense totals from single bindings
-  const totalIncome =
-    (useEnvelopeSheetValue(envelopeBudget.totalIncome) ?? 0) as number;
-  const totalExpenseBudget =
-    (useEnvelopeSheetValue(envelopeBudget.totalBudgeted) ?? 0) as number;
-  const totalSpent =
-    (useEnvelopeSheetValue(envelopeBudget.totalSpent) ?? 0) as number;
-  const totalBalance =
-    (useEnvelopeSheetValue(envelopeBudget.totalBalance) ?? 0) as number;
+  const totalIncome = (useEnvelopeSheetValue(envelopeBudget.totalIncome) ??
+    0) as number;
+  const totalExpenseBudget = (useEnvelopeSheetValue(
+    envelopeBudget.totalBudgeted,
+  ) ?? 0) as number;
+  const totalSpent = (useEnvelopeSheetValue(envelopeBudget.totalSpent) ??
+    0) as number;
+  const totalBalance = (useEnvelopeSheetValue(envelopeBudget.totalBalance) ??
+    0) as number;
   const toBudget =
     (useEnvelopeSheetValue({
       name: envelopeBudget.toBudget,
@@ -293,10 +329,12 @@ export function MonarchSummaryPanel({
               gap: 4,
               fontSize: 13,
               fontWeight: 600,
-              color: isOverbudgeted ? theme.errorTextDark : theme.noticeTextDark,
+              color: isOverbudgeted
+                ? theme.errorTextDark
+                : theme.noticeTextDark,
             }}
           >
-            {t('Left to budget')}
+            <Trans>Left to budget</Trans>
             <SvgInformationOutline
               width={13}
               height={13}
@@ -411,7 +449,9 @@ export function MonarchSummaryPanel({
           <View
             style={{
               fontSize: 12,
-              color: isOverbudgeted ? theme.errorTextDark : theme.noticeTextDark,
+              color: isOverbudgeted
+                ? theme.errorTextDark
+                : theme.noticeTextDark,
               opacity: 0.7,
               marginTop: 2,
             }}
@@ -448,9 +488,7 @@ export function MonarchSummaryPanel({
               color:
                 activeTab === tab.id ? theme.pageText : theme.pageTextSubdued,
               backgroundColor:
-                activeTab === tab.id
-                  ? theme.pageBackground
-                  : 'transparent',
+                activeTab === tab.id ? theme.pageBackground : 'transparent',
               boxShadow:
                 activeTab === tab.id
                   ? '0px 1px 3px rgba(34,32,29,0.12)'
