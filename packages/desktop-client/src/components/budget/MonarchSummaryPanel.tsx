@@ -216,7 +216,17 @@ function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
   );
 }
 
-type TabName = 'summary' | 'income' | 'expenses';
+const SAVINGS_KEYWORDS = [
+  'saving', 'investment', 'invest', 'retire', 'ira', '401k', 'roth',
+  'brokerage', 'emergency', 'wealth', 'portfolio',
+];
+
+function isSavingsGroup(group: CategoryGroupEntity): boolean {
+  const name = group.name.toLowerCase();
+  return SAVINGS_KEYWORDS.some(kw => name.includes(kw));
+}
+
+type TabName = 'summary' | 'income' | 'expenses' | 'savings';
 
 type MonarchSummaryPanelProps = {
   month: string;
@@ -254,7 +264,9 @@ export function MonarchSummaryPanel({
   }, []);
 
   const incomeGroups = categoryGroups.filter(g => g.is_income && !g.hidden);
-  const expenseGroups = categoryGroups.filter(g => !g.is_income && !g.hidden);
+  const allExpenseGroups = categoryGroups.filter(g => !g.is_income && !g.hidden);
+  const savingsGroups = allExpenseGroups.filter(isSavingsGroup);
+  const expenseGroups = allExpenseGroups.filter(g => !isSavingsGroup(g));
 
   const totalIncomeBudget = Object.values(incomeBudgets).reduce(
     (sum, v) => sum + v,
@@ -284,6 +296,9 @@ export function MonarchSummaryPanel({
     { id: 'summary', label: t('Summary') },
     { id: 'income', label: t('Income') },
     { id: 'expenses', label: t('Expenses') },
+    ...(savingsGroups.length > 0
+      ? [{ id: 'savings' as TabName, label: t('Savings') }]
+      : []),
   ];
 
   return (
@@ -501,7 +516,7 @@ export function MonarchSummaryPanel({
       </View>
 
       {/* Tab content */}
-      {/* Summary tab: overview of both income and expenses */}
+      {/* Summary tab: overview of income, expenses, savings */}
       {activeTab === 'summary' && (
         <>
           <SectionCard
@@ -531,7 +546,7 @@ export function MonarchSummaryPanel({
         />
       )}
 
-      {/* Expenses tab: per expense-group breakdown */}
+      {/* Expenses tab: regular expense groups only */}
       {activeTab === 'expenses' && (
         <>
           {expenseGroups.length > 0 ? (
@@ -543,6 +558,19 @@ export function MonarchSummaryPanel({
               actual={-totalSpent}
               remaining={totalBalance}
             />
+          )}
+        </>
+      )}
+
+      {/* Savings & Investments tab */}
+      {activeTab === 'savings' && (
+        <>
+          {savingsGroups.length > 0 ? (
+            savingsGroups.map(g => <GroupSectionCard key={g.id} group={g} />)
+          ) : (
+            <View style={{ color: theme.pageTextSubdued, fontSize: 13, padding: 8 }}>
+              {t('No savings or investment groups found. Name a category group with keywords like "Savings" or "Investments" to see it here.')}
+            </View>
           )}
         </>
       )}
