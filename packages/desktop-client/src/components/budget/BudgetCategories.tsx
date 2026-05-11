@@ -476,6 +476,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                   collapsed={collapsedGroupIds.includes(item.value.id)}
                   onEditName={onEditName!}
                   onSave={_onSaveGroup}
+                  onDelete={onDeleteGroup}
                   onToggleCollapse={onToggleCollapse}
                   onShowNewCategory={onShowNewCategory!}
                 />
