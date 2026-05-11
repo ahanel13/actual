@@ -38,6 +38,7 @@ type BudgetItem =
   | { type: 'income-group'; value: CategoryGroupEntity }
   | { type: 'income-category'; value: CategoryEntity }
   | { type: 'income-total'; value: CategoryGroupEntity }
+  | { type: 'income-header' }
   | { type: 'savings-separator' }
   | { type: 'savings-group'; value: CategoryGroupEntity }
   | { type: 'savings-category'; value: CategoryEntity; group: CategoryGroupEntity };
@@ -125,6 +126,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       let items: BudgetItem[] = [];
 
       if (incomeGroup) {
+        items.push({ type: 'income-header' });
         items.push({ type: 'income-group', value: incomeGroup });
 
         if (newCategoryForGroup === incomeGroup.id) {
@@ -396,6 +398,33 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 />
               );
               break;
+            case 'income-header':
+              content = (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    height: 44,
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    backgroundColor: theme.tableHeaderBackground,
+                  }}
+                >
+                  <View
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      color: theme.tableHeaderText,
+                      textTransform: 'uppercase',
+                      flex: 1,
+                    }}
+                  >
+                    <Trans>Income</Trans>
+                  </View>
+                </View>
+              );
+              break;
             case 'income-total':
               content = <IncomeTotalRow group={item.value} />;
               break;
@@ -548,11 +577,13 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               key={
                 'value' in item
                   ? item.value.id
-                  : item.type === 'income-separator'
-                    ? 'income-separator'
-                    : item.type === 'savings-separator'
-                      ? 'savings-separator'
-                      : idx
+                  : item.type === 'income-header'
+                    ? 'income-header'
+                    : item.type === 'income-separator'
+                      ? 'income-separator'
+                      : item.type === 'savings-separator'
+                        ? 'savings-separator'
+                        : idx
               }
               value={pos}
             >
