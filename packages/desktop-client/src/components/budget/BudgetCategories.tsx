@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { SvgExpandArrow } from '@actual-app/components/icons/v0';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -19,11 +20,16 @@ import { IncomeTotalsMonth } from './envelope/EnvelopeBudgetComponents';
 import { ExpenseCategory } from './ExpenseCategory';
 import { ExpenseGroup } from './ExpenseGroup';
 import { IncomeCategory } from './IncomeCategory';
-import { IncomeGroup } from './IncomeGroup';
 import { RenderMonths } from './RenderMonths';
 import { SidebarCategory } from './SidebarCategory';
 import { SidebarGroup } from './SidebarGroup';
 import { separateGroups } from './util';
+
+// Synthetic IDs used to persist collapse state for the Income and Savings
+// section banners (which aren't real category groups). They piggy-back on
+// the existing `budget.collapsed` local pref.
+const INCOME_SECTION_ID = '__income_section__';
+const SAVINGS_SECTION_ID = '__savings_section__';
 
 type BudgetItem =
   | { type: 'new-group' }
@@ -35,13 +41,12 @@ type BudgetItem =
       group: CategoryGroupEntity;
     }
   | { type: 'income-separator' }
-  | { type: 'income-group'; value: CategoryGroupEntity }
   | { type: 'income-category'; value: CategoryEntity }
   | { type: 'income-total'; value: CategoryGroupEntity }
   | { type: 'income-header' }
   | { type: 'savings-separator' }
-  | { type: 'savings-group'; value: CategoryGroupEntity }
-  | { type: 'savings-category'; value: CategoryEntity; group: CategoryGroupEntity };
+  | { type: 'savings-category'; value: CategoryEntity; group: CategoryGroupEntity }
+  | { type: 'ungrouped-divider'; value: CategoryGroupEntity };
 
 type LocalDragState =
   | DragState<CategoryEntity>
@@ -126,29 +131,33 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       let items: BudgetItem[] = [];
 
       if (incomeGroup) {
+        // Flat layout (Monarch parity): no per-group header for Income.
         items.push({ type: 'income-header' });
-        items.push({ type: 'income-group', value: incomeGroup });
 
-        if (newCategoryForGroup === incomeGroup.id) {
-          items.push({ type: 'new-category' });
-        }
+        const incomeCollapsed =
+          collapsedGroupIds.includes(INCOME_SECTION_ID);
 
-        items.push(
-          ...(collapsedGroupIds.includes(incomeGroup.id)
-            ? []
-            : incomeGroup.categories?.filter(
+        if (!incomeCollapsed) {
+          if (newCategoryForGroup === incomeGroup.id) {
+            items.push({ type: 'new-category' });
+          }
+
+          items.push(
+            ...(
+              incomeGroup.categories?.filter(
                 cat => showHiddenCategories || !cat.hidden,
               ) || []
-          ).map(
-            (cat): BudgetItem => ({
-              type: 'income-category',
-              value: cat,
-            }),
-          ),
-        );
+            ).map(
+              (cat): BudgetItem => ({
+                type: 'income-category',
+                value: cat,
+              }),
+            ),
+          );
 
-        // Total income summary row, then separator before expenses
-        items.push({ type: 'income-total', value: incomeGroup });
+          items.push({ type: 'income-total', value: incomeGroup });
+        }
+
         items.push({ type: 'income-separator' });
       }
 
@@ -164,20 +173,19 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
             cat => showHiddenCategories || !cat.hidden,
           );
 
-          const groupItems: BudgetItem[] = [
-            { type: 'expense-group', value: { ...group } },
-          ];
+          const groupItems: BudgetItem[] = group.is_ungrouped
+            ? [{ type: 'ungrouped-divider', value: { ...group } }]
+            : [{ type: 'expense-group', value: { ...group } }];
 
           if (newCategoryForGroup === group.id) {
             groupItems.push({ type: 'new-category' });
           }
 
+          const showCategories = group.is_ungrouped || !collapsedGroupIds.includes(group.id);
+
           return [
             ...groupItems,
-            ...(collapsedGroupIds.includes(group.id)
-              ? []
-              : groupCategories || []
-            ).map(
+            ...(showCategories ? groupCategories || [] : []).map(
               (cat): BudgetItem => ({
                 type: 'expense-category',
                 value: cat,
@@ -190,38 +198,37 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
 
       items = items.concat(expenseItems);
 
-      // Savings & Investments section
+      // Savings & Investments section — flat layout (Monarch parity):
+      // categories from all savings groups are merged into one list with no
+      // per-group headers. New categories land in the first non-hidden
+      // savings group (the only ambiguous case; rarely more than one).
       if (savingsGroups.length > 0) {
         items.push({ type: 'savings-separator' });
 
-        const savingsItems: BudgetItem[] = Array.prototype.concat.apply(
-          [],
-          savingsGroups.map(group => {
-            if (group.hidden && !showHiddenCategories) return [];
+        const savingsCollapsed =
+          collapsedGroupIds.includes(SAVINGS_SECTION_ID);
 
-            const groupCategories = group.categories?.filter(
-              cat => showHiddenCategories || !cat.hidden,
-            );
-            const groupItems: BudgetItem[] = [
-              { type: 'savings-group', value: { ...group } },
-            ];
-            if (newCategoryForGroup === group.id) {
-              groupItems.push({ type: 'new-category' });
+        if (!savingsCollapsed) {
+          const visibleSavingsGroups = savingsGroups.filter(
+            g => showHiddenCategories || !g.hidden,
+          );
+          const newCategoryParent = visibleSavingsGroups.find(
+            g => g.id === newCategoryForGroup,
+          );
+          if (newCategoryParent) {
+            items.push({ type: 'new-category' });
+          }
+
+          for (const group of visibleSavingsGroups) {
+            const groupCategories =
+              group.categories?.filter(
+                cat => showHiddenCategories || !cat.hidden,
+              ) || [];
+            for (const cat of groupCategories) {
+              items.push({ type: 'savings-category', value: cat, group });
             }
-            return [
-              ...groupItems,
-              ...(collapsedGroupIds.includes(group.id)
-                ? []
-                : groupCategories || []
-              ).map((cat): BudgetItem => ({
-                type: 'savings-category',
-                value: cat,
-                group,
-              })),
-            ];
-          }),
-        );
-        items = items.concat(savingsItems);
+          }
+        }
       }
 
       if (isAddingGroup) {
@@ -309,18 +316,26 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       }
     }
 
-    return (
-      <View
-        style={{
-          marginBottom: 10,
-          backgroundColor: theme.budgetCurrentMonth,
-          overflow: 'hidden',
-          boxShadow: styles.cardShadow,
-          borderRadius: '0 0 12px 12px',
-          flex: 1,
-        }}
-      >
-        {items.map((item, idx) => {
+    // Partition items into 3 visually-separate cards (Income / Expenses /
+    // Savings). The income-separator marker switches to expense; the
+    // savings-separator marker switches to savings. Both separators are
+    // rendered AS the banner of the section they belong to (Expenses /
+    // Savings & Investments), so they push into the new section.
+    const sectionedItems: Record<'income' | 'expense' | 'savings', BudgetItem[]> = {
+      income: [],
+      expense: [],
+      savings: [],
+    };
+    {
+      let current: 'income' | 'expense' | 'savings' = 'income';
+      for (const item of items) {
+        if (item.type === 'income-separator') current = 'expense';
+        if (item.type === 'savings-separator') current = 'savings';
+        sectionedItems[current].push(item);
+      }
+    }
+
+    const renderItem = (sectionItems: BudgetItem[]) => (item: BudgetItem, idx: number) => {
           let content;
           switch (item.type) {
             case 'new-group':
@@ -398,9 +413,20 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 />
               );
               break;
-            case 'income-header':
+            case 'income-header': {
+              const incomeCollapsed =
+                collapsedGroupIds.includes(INCOME_SECTION_ID);
               content = (
                 <View
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onToggleCollapse(INCOME_SECTION_ID)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onToggleCollapse(INCOME_SECTION_ID);
+                    }
+                  }}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -408,8 +434,21 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                     paddingLeft: 10,
                     paddingRight: 10,
                     backgroundColor: theme.tableHeaderBackground,
+                    cursor: 'pointer',
                   }}
                 >
+                  <SvgExpandArrow
+                    width={8}
+                    height={8}
+                    style={{
+                      marginRight: 8,
+                      marginLeft: 4,
+                      flexShrink: 0,
+                      transition: 'transform .1s',
+                      transform: incomeCollapsed ? 'rotate(-90deg)' : '',
+                      color: theme.tableHeaderText,
+                    }}
+                  />
                   <View
                     style={{
                       fontSize: 11,
@@ -425,6 +464,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 </View>
               );
               break;
+            }
             case 'income-total':
               content = <IncomeTotalRow group={item.value} />;
               break;
@@ -437,8 +477,6 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                     height: 44,
                     paddingLeft: 10,
                     paddingRight: 10,
-                    marginTop: 8,
-                    borderTop: '1px solid ' + theme.tableBorder,
                     backgroundColor: theme.tableHeaderBackground,
                   }}
                 >
@@ -468,20 +506,6 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 </View>
               );
               break;
-            case 'income-group':
-              content = (
-                <IncomeGroup
-                  group={item.value}
-                  editingCell={editingCell}
-                  collapsed={collapsedGroupIds.includes(item.value.id)}
-                  onEditName={onEditName!}
-                  onSave={_onSaveGroup}
-                  onDelete={onDeleteGroup}
-                  onToggleCollapse={onToggleCollapse}
-                  onShowNewCategory={onShowNewCategory!}
-                />
-              );
-              break;
             case 'income-category':
               content = (
                 <IncomeCategory
@@ -499,20 +523,61 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 />
               );
               break;
-            case 'savings-separator':
+            case 'ungrouped-divider':
+              content = (
+                <ExpenseGroup
+                  group={item.value}
+                  editingCell={editingCell}
+                  collapsed={false}
+                  dragState={dragState}
+                  onEditName={onEditName}
+                  onSave={_onSaveGroup}
+                  onDelete={onDeleteGroup}
+                  onDragChange={onDragChange}
+                  onReorderGroup={onReorderGroup}
+                  onReorderCategory={onReorderCategory}
+                  onToggleCollapse={onToggleCollapse}
+                  onShowNewCategory={onShowNewCategory}
+                  onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
+                />
+              );
+              break;
+            case 'savings-separator': {
+              const savingsCollapsed =
+                collapsedGroupIds.includes(SAVINGS_SECTION_ID);
               content = (
                 <View
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onToggleCollapse(SAVINGS_SECTION_ID)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onToggleCollapse(SAVINGS_SECTION_ID);
+                    }
+                  }}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     height: 44,
                     paddingLeft: 10,
                     paddingRight: 10,
-                    marginTop: 8,
-                    borderTop: '1px solid ' + theme.tableBorder,
                     backgroundColor: theme.tableHeaderBackground,
+                    cursor: 'pointer',
                   }}
                 >
+                  <SvgExpandArrow
+                    width={8}
+                    height={8}
+                    style={{
+                      marginRight: 8,
+                      marginLeft: 4,
+                      flexShrink: 0,
+                      transition: 'transform .1s',
+                      transform: savingsCollapsed ? 'rotate(-90deg)' : '',
+                      color: theme.tableHeaderText,
+                    }}
+                  />
                   <View
                     style={{
                       fontSize: 11,
@@ -528,25 +593,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
                 </View>
               );
               break;
-            case 'savings-group':
-              content = (
-                <ExpenseGroup
-                  group={item.value}
-                  editingCell={editingCell}
-                  collapsed={collapsedGroupIds.includes(item.value.id)}
-                  dragState={dragState}
-                  onEditName={onEditName}
-                  onSave={_onSaveGroup}
-                  onDelete={onDeleteGroup}
-                  onDragChange={onDragChange}
-                  onReorderGroup={onReorderGroup}
-                  onReorderCategory={onReorderCategory}
-                  onToggleCollapse={onToggleCollapse}
-                  onShowNewCategory={onShowNewCategory}
-                  onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
-                />
-              );
-              break;
+            }
             case 'savings-category':
               content = (
                 <ExpenseCategory
@@ -571,7 +618,11 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
           }
 
           const pos =
-            idx === 0 ? 'first' : idx === items.length - 1 ? 'last' : null;
+            idx === 0
+              ? 'first'
+              : idx === sectionItems.length - 1
+                ? 'last'
+                : null;
 
           return (
             <DropHighlightPosContext.Provider
@@ -603,7 +654,32 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               </View>
             </DropHighlightPosContext.Provider>
           );
-        })}
+        };
+
+    const cardStyle = {
+      backgroundColor: theme.budgetCurrentMonth,
+      overflow: 'hidden' as const,
+      boxShadow: styles.cardShadow,
+      borderRadius: 12,
+    };
+
+    return (
+      <View style={{ flex: 1 }}>
+        {sectionedItems.income.length > 0 && (
+          <View style={{ ...cardStyle, marginBottom: 16 }}>
+            {sectionedItems.income.map(renderItem(sectionedItems.income))}
+          </View>
+        )}
+        {sectionedItems.expense.length > 0 && (
+          <View style={{ ...cardStyle, marginBottom: 16 }}>
+            {sectionedItems.expense.map(renderItem(sectionedItems.expense))}
+          </View>
+        )}
+        {sectionedItems.savings.length > 0 && (
+          <View style={{ ...cardStyle, marginBottom: 16 }}>
+            {sectionedItems.savings.map(renderItem(sectionedItems.savings))}
+          </View>
+        )}
       </View>
     );
   },
