@@ -151,7 +151,7 @@ export function Budget() {
         type: 'date',
       },
     ];
-    void navigate('/accounts', {
+    void navigate('/transactions', {
       state: {
         goBack: true,
         filterConditions,
