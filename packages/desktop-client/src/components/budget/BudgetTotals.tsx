@@ -23,12 +23,14 @@ import { useBudgetComponents } from '.';
 
 type BudgetTotalsProps = {
   toggleHiddenCategories: () => void;
+  toggleUnbudgetedCategories: () => void;
   expandAllCategories: () => void;
   collapseAllCategories: () => void;
 };
 
 export const BudgetTotals = memo(function BudgetTotals({
   toggleHiddenCategories,
+  toggleUnbudgetedCategories,
   expandAllCategories,
   collapseAllCategories,
 }: BudgetTotalsProps) {
@@ -155,6 +157,8 @@ export const BudgetTotals = memo(function BudgetTotals({
             onMenuSelect={type => {
               if (type === 'toggle-visibility') {
                 toggleHiddenCategories();
+              } else if (type === 'toggle-unbudgeted') {
+                toggleUnbudgetedCategories();
               } else if (type === 'expandAllCategories') {
                 expandAllCategories();
               } else if (type === 'collapseAllCategories') {
@@ -166,6 +170,10 @@ export const BudgetTotals = memo(function BudgetTotals({
               {
                 name: 'toggle-visibility',
                 text: t('Toggle hidden categories'),
+              },
+              {
+                name: 'toggle-unbudgeted',
+                text: t('Toggle unbudgeted categories'),
               },
               {
                 name: 'expandAllCategories',

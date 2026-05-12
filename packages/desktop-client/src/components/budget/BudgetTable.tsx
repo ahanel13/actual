@@ -79,6 +79,9 @@ export function BudgetTable(props: BudgetTableProps) {
   const [showHiddenCategories, setShowHiddenCategoriesPef] = useLocalPref(
     'budget.showHiddenCategories',
   );
+  const [hideUnbudgeted, setHideUnbudgetedPref] = useLocalPref(
+    'budget.hideUnbudgeted',
+  );
   const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
   const categoryExpandedState = categoryExpandedStatePref ?? 0;
   const [editing, setEditing] = useState<{ id: string; cell: string } | null>(
@@ -208,6 +211,10 @@ export function BudgetTable(props: BudgetTableProps) {
     onToggleHiddenCategories();
   };
 
+  const toggleUnbudgetedCategories = () => {
+    setHideUnbudgetedPref(!hideUnbudgeted);
+  };
+
   const expandAllCategories = () => {
     onCollapse([]);
   };
@@ -234,7 +241,6 @@ export function BudgetTable(props: BudgetTableProps) {
         }),
       }}
     >
-
       <MonthsProvider
         startMonth={startMonth}
         numMonths={numMonths}
@@ -243,6 +249,7 @@ export function BudgetTable(props: BudgetTableProps) {
       >
         <BudgetTotals
           toggleHiddenCategories={toggleHiddenCategories}
+          toggleUnbudgetedCategories={toggleUnbudgetedCategories}
           expandAllCategories={expandAllCategories}
           collapseAllCategories={collapseAllCategories}
         />

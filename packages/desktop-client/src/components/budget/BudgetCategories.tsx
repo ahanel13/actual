@@ -15,8 +15,13 @@ import { DropHighlightPosContext } from '#components/sort';
 import type { DragState, OnDropCallback } from '#components/sort';
 import { Row } from '#components/table';
 import { useLocalPref } from '#hooks/useLocalPref';
+import { useSyncedPref } from '#hooks/useSyncedPref';
+import { envelopeBudget } from '#spreadsheet/bindings';
 
-import { IncomeTotalsMonth } from './envelope/EnvelopeBudgetComponents';
+import {
+  IncomeTotalsMonth,
+  useEnvelopeSheetValue,
+} from './envelope/EnvelopeBudgetComponents';
 import { ExpenseCategory } from './ExpenseCategory';
 import { ExpenseGroup } from './ExpenseGroup';
 import { IncomeCategory } from './IncomeCategory';
@@ -30,6 +35,33 @@ import { separateGroups } from './util';
 // the existing `budget.collapsed` local pref.
 const INCOME_SECTION_ID = '__income_section__';
 const SAVINGS_SECTION_ID = '__savings_section__';
+
+// Wraps a category row and short-circuits to `null` when the user has the
+// "hide unbudgeted categories" toggle on AND the category has 0 budgeted +
+// 0 spent for the current month. Envelope budget only — tracking budget is
+// a no-op (bindings differ; tracked separately).
+function MaybeHideUnbudgeted({
+  catId,
+  hideUnbudgeted,
+  enabled,
+  children,
+}: {
+  catId: string;
+  hideUnbudgeted: boolean;
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const budgeted = (useEnvelopeSheetValue(
+    envelopeBudget.catBudgeted(catId),
+  ) ?? 0) as number;
+  const spent = (useEnvelopeSheetValue(
+    envelopeBudget.catSumAmount(catId),
+  ) ?? 0) as number;
+  if (enabled && hideUnbudgeted && budgeted === 0 && spent === 0) {
+    return null;
+  }
+  return <>{children}</>;
+}
 
 type BudgetItem =
   | { type: 'new-group' }
@@ -116,6 +148,9 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     const [collapsedGroupIds = [], setCollapsedGroupIdsPref] =
       useLocalPref('budget.collapsed');
     const [showHiddenCategories] = useLocalPref('budget.showHiddenCategories');
+    const [hideUnbudgeted] = useLocalPref('budget.hideUnbudgeted');
+    const [budgetType = 'envelope'] = useSyncedPref('budgetType');
+    const hideUnbudgetedEnabled = budgetType === 'envelope';
     function onCollapse(value: Array<CategoryGroupEntity['id']>) {
       setCollapsedGroupIdsPref(value);
     }
@@ -397,20 +432,26 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               break;
             case 'expense-category':
               content = (
-                <ExpenseCategory
-                  cat={item.value}
-                  categoryGroup={item.group}
-                  editingCell={editingCell}
-                  dragState={dragState}
-                  onEditName={onEditName}
-                  onEditMonth={onEditMonth}
-                  onSave={_onSaveCategory}
-                  onDelete={onDeleteCategory}
-                  onDragChange={onDragChange}
-                  onReorder={onReorderCategory}
-                  onBudgetAction={onBudgetAction}
-                  onShowActivity={onShowActivity}
-                />
+                <MaybeHideUnbudgeted
+                  catId={item.value.id}
+                  hideUnbudgeted={!!hideUnbudgeted}
+                  enabled={hideUnbudgetedEnabled}
+                >
+                  <ExpenseCategory
+                    cat={item.value}
+                    categoryGroup={item.group}
+                    editingCell={editingCell}
+                    dragState={dragState}
+                    onEditName={onEditName}
+                    onEditMonth={onEditMonth}
+                    onSave={_onSaveCategory}
+                    onDelete={onDeleteCategory}
+                    onDragChange={onDragChange}
+                    onReorder={onReorderCategory}
+                    onBudgetAction={onBudgetAction}
+                    onShowActivity={onShowActivity}
+                  />
+                </MaybeHideUnbudgeted>
               );
               break;
             case 'income-header': {
@@ -508,19 +549,25 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               break;
             case 'income-category':
               content = (
-                <IncomeCategory
-                  cat={item.value}
-                  editingCell={editingCell}
-                  isLast={idx === items.length - 1}
-                  onEditName={onEditName}
-                  onEditMonth={onEditMonth}
-                  onSave={_onSaveCategory}
-                  onDelete={onDeleteCategory}
-                  onDragChange={onDragChange}
-                  onReorder={onReorderCategory}
-                  onBudgetAction={onBudgetAction}
-                  onShowActivity={onShowActivity}
-                />
+                <MaybeHideUnbudgeted
+                  catId={item.value.id}
+                  hideUnbudgeted={!!hideUnbudgeted}
+                  enabled={hideUnbudgetedEnabled}
+                >
+                  <IncomeCategory
+                    cat={item.value}
+                    editingCell={editingCell}
+                    isLast={idx === items.length - 1}
+                    onEditName={onEditName}
+                    onEditMonth={onEditMonth}
+                    onSave={_onSaveCategory}
+                    onDelete={onDeleteCategory}
+                    onDragChange={onDragChange}
+                    onReorder={onReorderCategory}
+                    onBudgetAction={onBudgetAction}
+                    onShowActivity={onShowActivity}
+                  />
+                </MaybeHideUnbudgeted>
               );
               break;
             case 'ungrouped-divider':
@@ -596,20 +643,26 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
             }
             case 'savings-category':
               content = (
-                <ExpenseCategory
-                  cat={item.value}
-                  categoryGroup={item.group}
-                  editingCell={editingCell}
-                  dragState={dragState}
-                  onEditName={onEditName}
-                  onEditMonth={onEditMonth}
-                  onSave={_onSaveCategory}
-                  onDelete={onDeleteCategory}
-                  onDragChange={onDragChange}
-                  onReorder={onReorderCategory}
-                  onBudgetAction={onBudgetAction}
-                  onShowActivity={onShowActivity}
-                />
+                <MaybeHideUnbudgeted
+                  catId={item.value.id}
+                  hideUnbudgeted={!!hideUnbudgeted}
+                  enabled={hideUnbudgetedEnabled}
+                >
+                  <ExpenseCategory
+                    cat={item.value}
+                    categoryGroup={item.group}
+                    editingCell={editingCell}
+                    dragState={dragState}
+                    onEditName={onEditName}
+                    onEditMonth={onEditMonth}
+                    onSave={_onSaveCategory}
+                    onDelete={onDeleteCategory}
+                    onDragChange={onDragChange}
+                    onReorder={onReorderCategory}
+                    onBudgetAction={onBudgetAction}
+                    onShowActivity={onShowActivity}
+                  />
+                </MaybeHideUnbudgeted>
               );
               break;
             default:
