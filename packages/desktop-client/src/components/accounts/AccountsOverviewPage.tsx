@@ -650,8 +650,7 @@ export function AccountsOverviewPage() {
         </Button>
       </View>
 
-      {/* Net worth chart — sticky so the combined total stays visible while
-          scrolling a long account list. */}
+      {/* Net worth chart */}
       <View
         style={{
           backgroundColor: theme.cardBackground,
@@ -659,9 +658,6 @@ export function AccountsOverviewPage() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           padding: '20px 24px',
           marginBottom: 20,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
           flexShrink: 0,
         }}
       >
