@@ -21,12 +21,14 @@ import * as query from '#queries';
 import { liveQuery } from '#queries/liveQuery';
 
 const LABEL_WIDTH = 70;
+const LABEL_HEIGHT_ABOVE = 36;
 
 type BalanceHistoryGraphProps = {
   accountId?: string;
   style?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
   compact?: boolean;
+  labelsAbove?: boolean;
 };
 
 export function BalanceHistoryGraph({
@@ -34,6 +36,7 @@ export function BalanceHistoryGraph({
   style,
   ref,
   compact = false,
+  labelsAbove = false,
 }: BalanceHistoryGraphProps) {
   const locale = useLocale();
   const animationProps = useRechartsAnimation({ isAnimationActive: false });
@@ -248,8 +251,81 @@ export function BalanceHistoryGraph({
             );
           }
 
+          const showSideLabels = !compact && !labelsAbove;
+          const showTopLabels = !compact && labelsAbove;
+          const chartWidth = showSideLabels ? width - LABEL_WIDTH : width;
+          const chartHeight = showTopLabels ? height - LABEL_HEIGHT_ABOVE : height;
+
+          const hoveredIndex = hoveredValue
+            ? balanceData.findIndex(d => d.date === hoveredValue.date)
+            : -1;
+          const previousValue =
+            hoveredIndex > 0 ? balanceData[hoveredIndex - 1] : null;
+          const monthlyChange =
+            previousValue && hoveredValue
+              ? hoveredValue.balance - previousValue.balance
+              : null;
+
+          const topLabelRow = showTopLabels && (
+            <View
+              style={{
+                height: LABEL_HEIGHT_ABOVE,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                ...styles.smallText,
+              }}
+            >
+              {percentageChange !== 0 ? (
+                <Text style={{ color, fontWeight: 600 }}>
+                  {percentageChange >= 0 ? '+' : ''}
+                  {percentageChange.toFixed(1)}%
+                </Text>
+              ) : (
+                <View />
+              )}
+              {hoveredValue && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'baseline',
+                    gap: 8,
+                    flexShrink: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Text style={{ fontWeight: 700, color: theme.pageText, whiteSpace: 'nowrap' }}>
+                    {hoveredValue.date}
+                  </Text>
+                  <PrivacyFilter activationFilters={[() => !isHovered]}>
+                    <Text style={{ color: theme.pageText, whiteSpace: 'nowrap' }}>
+                      {integerToCurrency(hoveredValue.balance)}
+                    </Text>
+                  </PrivacyFilter>
+                  {monthlyChange !== null && (
+                    <Text
+                      style={{
+                        color:
+                          monthlyChange >= 0
+                            ? theme.noticeTextLight
+                            : theme.errorText,
+                        fontSize: 11,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {monthlyChange >= 0 ? '+' : ''}
+                      {integerToCurrency(monthlyChange)}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          );
+
           return (
             <View style={{ width }}>
+              {topLabelRow}
               <div
                 style={{
                   display: 'flex',
@@ -261,8 +337,8 @@ export function BalanceHistoryGraph({
               >
                 <AreaChart
                   data={balanceData}
-                  width={compact ? width : width - LABEL_WIDTH}
-                  height={height}
+                  width={chartWidth}
+                  height={chartHeight}
                 >
                   <defs>
                     <linearGradient
@@ -322,7 +398,7 @@ export function BalanceHistoryGraph({
                   />
                 </AreaChart>
 
-                {!compact && (
+                {showSideLabels && (
                   <SpaceBetween
                     direction="vertical"
                     style={{
@@ -342,48 +418,33 @@ export function BalanceHistoryGraph({
                       </Text>
                     )}
 
-                    {hoveredValue &&
-                      (() => {
-                        const hoveredIndex = balanceData.findIndex(
-                          d => d.date === hoveredValue.date,
-                        );
-                        const previousValue =
-                          hoveredIndex > 0
-                            ? balanceData[hoveredIndex - 1]
-                            : null;
-                        const monthlyChange = previousValue
-                          ? hoveredValue.balance - previousValue.balance
-                          : null;
-                        return (
-                          <View>
-                            <Text style={{ fontWeight: 800 }}>
-                              {hoveredValue.date}
-                            </Text>
-                            <PrivacyFilter
-                              activationFilters={[() => !isHovered]}
-                            >
-                              <Text>
-                                {integerToCurrency(hoveredValue.balance)}
-                              </Text>
-                            </PrivacyFilter>
-                            {monthlyChange !== null && (
-                              <Text
-                                style={{
-                                  color:
-                                    monthlyChange >= 0
-                                      ? theme.noticeTextLight
-                                      : theme.errorText,
-                                  fontSize: 10,
-                                  marginTop: 2,
-                                }}
-                              >
-                                {monthlyChange >= 0 ? '+' : ''}
-                                {integerToCurrency(monthlyChange)}
-                              </Text>
-                            )}
-                          </View>
-                        );
-                      })()}
+                    {hoveredValue && (
+                      <View>
+                        <Text style={{ fontWeight: 800 }}>
+                          {hoveredValue.date}
+                        </Text>
+                        <PrivacyFilter activationFilters={[() => !isHovered]}>
+                          <Text>
+                            {integerToCurrency(hoveredValue.balance)}
+                          </Text>
+                        </PrivacyFilter>
+                        {monthlyChange !== null && (
+                          <Text
+                            style={{
+                              color:
+                                monthlyChange >= 0
+                                  ? theme.noticeTextLight
+                                  : theme.errorText,
+                              fontSize: 10,
+                              marginTop: 2,
+                            }}
+                          >
+                            {monthlyChange >= 0 ? '+' : ''}
+                            {integerToCurrency(monthlyChange)}
+                          </Text>
+                        )}
+                      </View>
+                    )}
                   </SpaceBetween>
                 )}
               </div>

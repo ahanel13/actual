@@ -680,7 +680,7 @@ export function AccountsOverviewPage() {
             style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}
           />
         </View>
-        <BalanceHistoryGraph style={{ height: 140, margin: 0 }} />
+        <BalanceHistoryGraph style={{ height: 170, margin: 0 }} labelsAbove />
       </View>
 
       {/* Two-column layout */}
