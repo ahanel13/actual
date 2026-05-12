@@ -48,6 +48,9 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
   const [selectedType, setSelectedType] = useState<AccountType | ''>(
     account?.type ?? '',
   );
+  const [selectedOffbudget, setSelectedOffbudget] = useState<0 | 1>(
+    account?.offbudget ? 1 : 0,
+  );
 
   if (!account) return null;
 
@@ -56,6 +59,7 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
       account: {
         ...account,
         type: selectedType === '' ? null : selectedType,
+        offbudget: selectedOffbudget,
       },
     });
     dispatch(closeModal());
@@ -66,7 +70,7 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
       {({ state }) => (
         <>
           <ModalHeader
-            title={<ModalTitle title={t('Change account type')} shrinkOnOverflow />}
+            title={<ModalTitle title={t('Edit account')} shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ gap: 16 }}>
@@ -75,11 +79,61 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
               <strong style={{ color: theme.pageText }}>{account.name}</strong>
             </View>
 
+            {/* On budget / Off budget toggle */}
+            <View style={{ gap: 8 }}>
+              <View
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: theme.pageTextSubdued,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                <Trans>Budget status</Trans>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {(
+                  [
+                    { value: 0 as const, label: 'On budget' },
+                    { value: 1 as const, label: 'Off budget' },
+                  ]
+                ).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedOffbudget(opt.value)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: `2px solid ${
+                        selectedOffbudget === opt.value
+                          ? theme.buttonPrimaryBackground
+                          : theme.tableBorder
+                      }`,
+                      backgroundColor:
+                        selectedOffbudget === opt.value
+                          ? theme.buttonPrimaryBackground + '15'
+                          : 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontSize: 14,
+                      color: theme.pageText,
+                    }}
+                  >
+                    <Trans>{opt.label}</Trans>
+                  </button>
+                ))}
+              </View>
+            </View>
+
             <View style={{ gap: 6 }}>
               {TYPE_OPTIONS.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setSelectedType(option.value as AccountType | '')}
+                  onClick={() =>
+                    setSelectedType(option.value as AccountType | '')
+                  }
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -129,7 +183,11 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
             <Button onPress={() => state.close()}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button variant="primary" onPress={onSave} style={{ marginLeft: 10 }}>
+            <Button
+              variant="primary"
+              onPress={onSave}
+              style={{ marginLeft: 10 }}
+            >
               <Trans>Save</Trans>
             </Button>
           </ModalButtons>
