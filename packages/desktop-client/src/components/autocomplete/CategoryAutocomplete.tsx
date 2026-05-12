@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo } from 'react';
+import React, { Fragment, useCallback, useMemo, useState } from 'react';
 import type {
   ComponentProps,
   ComponentPropsWithoutRef,
@@ -11,7 +11,7 @@ import type {
 import { Trans, useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
-import { SvgSplit } from '@actual-app/components/icons/v0';
+import { SvgAdd, SvgSplit } from '@actual-app/components/icons/v0';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { TextOneLine } from '@actual-app/components/text-one-line';
@@ -25,6 +25,7 @@ import type {
 } from '@actual-app/core/types/models';
 import { css, cx } from '@emotion/css';
 
+import { useCreateCategoryMutation } from '#budget';
 import { useEnvelopeSheetValue } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { makeAmountFullStyle } from '#components/budget/util';
 import { FinancialText } from '#components/FinancialText';
@@ -47,6 +48,7 @@ type CategoryListProps = {
     item: CategoryAutocompleteItem;
   }) => Partial<ComponentProps<typeof View>>;
   highlightedIndex: number;
+  inputValue?: string;
   embedded?: boolean;
   footer?: ReactNode;
   renderSplitTransactionButton?: (
@@ -61,10 +63,25 @@ type CategoryListProps = {
   showHiddenItems?: boolean;
   showBalances?: boolean;
 };
+
+function makeNew(id: string | null, rawCategory: string) {
+  if (id === 'new' && !rawCategory.startsWith('new:')) {
+    return 'new:' + rawCategory;
+  }
+  return id;
+}
+
+function stripNew(value: string | null | undefined) {
+  if (typeof value === 'string' && value.startsWith('new:')) {
+    return 'new';
+  }
+  return value;
+}
 function CategoryList({
   items,
   getItemProps,
   highlightedIndex,
+  inputValue,
   embedded,
   footer,
   renderSplitTransactionButton = defaultRenderSplitTransactionButton,
@@ -74,11 +91,15 @@ function CategoryList({
   showBalances,
 }: CategoryListProps) {
   const { t } = useTranslation();
-  const { splitTransaction, groupedCategories } = useMemo(() => {
+  const { splitTransaction, createCategoryItem, groupedCategories } = useMemo(() => {
     return items.reduce(
       (acc, item, index) => {
         if (item.id === 'split') {
           acc.splitTransaction = { ...item, highlightedIndex: index };
+          return acc;
+        }
+        if (item.id === 'new') {
+          acc.createCategoryItem = { ...item, highlightedIndex: index };
           return acc;
         }
 
@@ -104,9 +125,15 @@ function CategoryList({
       },
       {
         splitTransaction: null,
+        createCategoryItem: null,
         groupedCategories: [],
       } as {
         splitTransaction:
+          | (CategoryAutocompleteItem & {
+              highlightedIndex: number;
+            })
+          | null;
+        createCategoryItem:
           | (CategoryAutocompleteItem & {
               highlightedIndex: number;
             })
@@ -131,6 +158,25 @@ function CategoryList({
           ...(!embedded && { maxHeight: 175 }),
         }}
       >
+        {createCategoryItem &&
+          (() => {
+            const buttonProps = getItemProps
+              ? getItemProps({ item: createCategoryItem })
+              : {};
+            const { onClick, ...restButtonProps } = buttonProps;
+            return (
+              <CreateCategoryButton
+                key="new-category"
+                {...restButtonProps}
+                onClick={onClick}
+                categoryName={inputValue || ''}
+                highlighted={
+                  createCategoryItem.highlightedIndex === highlightedIndex
+                }
+                embedded={embedded}
+              />
+            );
+          })()}
         {splitTransaction &&
           (() => {
             const splitButtonProps = getItemProps
@@ -208,6 +254,12 @@ type CategoryAutocompleteProps = ComponentProps<
   categoryGroups?: Array<CategoryGroupEntity>;
   showBalances?: boolean;
   showSplitOption?: boolean;
+  /**
+   * When true, an extra "Create category 'X'" option is offered when the
+   * user's typed input doesn't match an existing category. The new category
+   * is created in the first non-income, non-hidden group.
+   */
+  allowCreate?: boolean;
   renderSplitTransactionButton?: (
     props: ComponentPropsWithoutRef<typeof SplitTransactionButton>,
   ) => ReactElement<typeof SplitTransactionButton>;
@@ -224,8 +276,13 @@ export function CategoryAutocomplete({
   categoryGroups,
   showBalances = true,
   showSplitOption,
+  allowCreate = false,
   embedded,
   closeOnBlur,
+  value,
+  inputProps,
+  onSelect,
+  onUpdate,
   renderSplitTransactionButton,
   renderCategoryItemGroupHeader,
   renderCategoryItem,
@@ -234,8 +291,13 @@ export function CategoryAutocomplete({
 }: CategoryAutocompleteProps) {
   const { data: { grouped: defaultCategoryGroups } = { grouped: [] } } =
     useCategories();
+  const createCategoryMutation = useCreateCategoryMutation();
+  const [rawCategory, setRawCategory] = useState('');
+  const hasCategoryInput = !!rawCategory;
+
   const categorySuggestions: CategoryAutocompleteItem[] = useMemo(() => {
-    const allSuggestions = (categoryGroups || defaultCategoryGroups).reduce(
+    const sourceGroups = categoryGroups || defaultCategoryGroups;
+    const allSuggestions = sourceGroups.reduce(
       (list, group) =>
         list.concat(
           (group.categories || [])
@@ -250,21 +312,76 @@ export function CategoryAutocomplete({
         : [],
     );
 
-    if (!showHiddenCategories) {
-      return allSuggestions.filter(
-        suggestion =>
-          suggestion.id === 'split' ||
-          (!suggestion.hidden && !suggestion.group?.hidden),
-      );
-    }
+    const filtered = !showHiddenCategories
+      ? allSuggestions.filter(
+          suggestion =>
+            suggestion.id === 'split' ||
+            (!suggestion.hidden && !suggestion.group?.hidden),
+        )
+      : allSuggestions;
 
-    return allSuggestions;
+    // Offer "Create category" as a synthetic option only when the user has
+    // typed something — keeps the option out of the default unfiltered list.
+    if (allowCreate && hasCategoryInput) {
+      return [
+        { id: 'new', name: '' } as CategoryAutocompleteItem,
+        ...filtered,
+      ];
+    }
+    return filtered;
   }, [
     categoryGroups,
     defaultCategoryGroups,
     showSplitOption,
     showHiddenCategories,
+    allowCreate,
+    hasCategoryInput,
   ]);
+
+  const handleSelect = useCallback(
+    async (idOrIds: string | string[] | null, inputValue: string) => {
+      const sourceGroups = categoryGroups || defaultCategoryGroups;
+      const targetGroup = sourceGroups.find(
+        g => !g.is_income && !g.is_savings && !g.hidden,
+      );
+
+      const create = async (name: string): Promise<string | null> => {
+        if (!targetGroup) return null;
+        try {
+          const id = await createCategoryMutation.mutateAsync({
+            name,
+            groupId: targetGroup.id,
+            isIncome: false,
+            isHidden: false,
+          });
+          return id ?? null;
+        } catch {
+          return null;
+        }
+      };
+
+      let resolved: string | string[] | null = idOrIds;
+      if (Array.isArray(idOrIds)) {
+        resolved = await Promise.all(
+          idOrIds.map(v => (v === 'new' ? create(inputValue) : v)),
+        ).then(arr => arr.filter((v): v is string => !!v));
+      } else if (idOrIds === 'new') {
+        resolved = await create(inputValue);
+      }
+
+      // Autocomplete onSelect intersects single/multi types; cast.
+      (onSelect as ((id: unknown, v: string) => void) | undefined)?.(
+        resolved,
+        inputValue,
+      );
+    },
+    [
+      categoryGroups,
+      defaultCategoryGroups,
+      createCategoryMutation,
+      onSelect,
+    ],
+  );
 
   const filterSuggestions = useCallback(
     (
@@ -276,6 +393,10 @@ export function CategoryAutocomplete({
         .filter(suggestion => {
           if (suggestion.id === 'split') {
             return true;
+          }
+          if (suggestion.id === 'new') {
+            // Hide the create option when the input is empty.
+            return !!value;
           }
 
           if (suggestion.group) {
@@ -305,23 +426,41 @@ export function CategoryAutocomplete({
       highlightFirst
       embedded={embedded}
       closeOnBlur={closeOnBlur}
+      value={value as never}
+      itemToString={item => {
+        if (!item) return '';
+        if (item.id === 'new') return rawCategory;
+        return item.name;
+      }}
+      inputProps={{
+        ...inputProps,
+        onChangeValue: setRawCategory,
+      }}
+      onUpdate={onUpdate}
+      // Autocomplete declares onSelect as (string & string[]) which is the
+      // intersection of single- and multi-select. handleSelect handles both
+      // shapes at runtime; cast to satisfy the type checker.
+      onSelect={handleSelect as never}
       getHighlightedIndex={suggestions => {
         if (suggestions.length === 0) {
           return null;
-        } else if (suggestions[0].id === 'split') {
-          // Highlight the first category since the split option is at index 0.
-          return suggestions.length > 1 ? 1 : null;
+        }
+        const firstId = suggestions[0].id;
+        if (firstId === 'split' || firstId === 'new') {
+          // Skip non-category options when picking a default highlight.
+          return suggestions.length > 1 ? 1 : 0;
         }
         return 0;
       }}
       filterSuggestions={filterSuggestions}
       suggestions={categorySuggestions}
-      renderItems={(items, getItemProps, highlightedIndex) => (
+      renderItems={(items, getItemProps, highlightedIndex, inputValue) => (
         <CategoryList
           items={items}
           embedded={embedded}
           getItemProps={getItemProps}
           highlightedIndex={highlightedIndex}
+          inputValue={inputValue}
           renderSplitTransactionButton={renderSplitTransactionButton}
           renderCategoryItemGroupHeader={renderCategoryItemGroupHeader}
           renderCategoryItem={renderCategoryItem}
@@ -331,6 +470,56 @@ export function CategoryAutocomplete({
       )}
       {...props}
     />
+  );
+}
+
+type CreateCategoryButtonProps = ComponentPropsWithoutRef<typeof View> & {
+  categoryName: string;
+  highlighted?: boolean;
+  embedded?: boolean;
+};
+
+function CreateCategoryButton({
+  categoryName,
+  highlighted,
+  embedded,
+  style,
+  ...props
+}: CreateCategoryButtonProps) {
+  const { isNarrowWidth } = useResponsive();
+  const narrowStyle = isNarrowWidth ? styles.mobileMenuItem : {};
+  const iconSize = isNarrowWidth ? 14 : 8;
+  return (
+    <View
+      data-testid="create-category-button"
+      style={{
+        display: 'block',
+        flex: '1 0',
+        color: highlighted
+          ? theme.menuAutoCompleteTextHover
+          : theme.noticeTextMenu,
+        borderRadius: embedded ? 4 : 0,
+        fontSize: 11,
+        fontWeight: 500,
+        padding: '6px 9px',
+        backgroundColor: highlighted
+          ? theme.menuAutoCompleteBackgroundHover
+          : 'transparent',
+        ':active': {
+          backgroundColor: 'rgba(100, 100, 100, .25)',
+        },
+        ...narrowStyle,
+        ...style,
+      }}
+      {...props}
+    >
+      <SvgAdd
+        width={iconSize}
+        height={iconSize}
+        style={{ marginRight: 5, display: 'inline-block' }}
+      />
+      <Trans>Create category "{{ categoryName }}"</Trans>
+    </View>
   );
 }
 
