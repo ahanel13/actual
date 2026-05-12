@@ -23,8 +23,6 @@ import { InputCell } from '#components/table';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useFeatureFlag } from '#hooks/useFeatureFlag';
 import { useGlobalPref } from '#hooks/useGlobalPref';
-import { pushModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
 
 type SidebarGroupProps = {
   group: CategoryGroupEntity;
@@ -60,7 +58,6 @@ export function SidebarGroup({
   onToggleCollapse,
 }: SidebarGroupProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
   const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
   const categoryExpandedState = categoryExpandedStatePref ?? 0;
@@ -146,7 +143,9 @@ export function SidebarGroup({
                   } else if (type === 'mark-as-expense') {
                     onSave({ ...group, is_savings: false });
                   } else if (type === 'remove-grouping') {
-                    dispatch(pushModal({ modal: { name: 'dissolve-group', options: { groupId: group.id } } }));
+                    onSave({ ...group, is_ungrouped: true });
+                  } else if (type === 'restore-grouping') {
+                    onSave({ ...group, is_ungrouped: false });
                   } else if (type === 'apply-multiple-category-template') {
                     onApplyBudgetTemplatesInGroup?.(
                       group.categories.filter(c => !c.hidden).map(c => c.id),
@@ -168,9 +167,13 @@ export function SidebarGroup({
                     name: 'mark-as-expense',
                     text: t('Mark as Expense'),
                   },
-                  {
+                  !group.is_ungrouped && {
                     name: 'remove-grouping',
                     text: t('Remove grouping'),
+                  },
+                  group.is_ungrouped && {
+                    name: 'restore-grouping',
+                    text: t('Restore grouping'),
                   },
                   onDelete && { name: 'delete', text: t('Delete') },
                   ...(isGoalTemplatesEnabled

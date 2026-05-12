@@ -95,12 +95,6 @@ export type Modal =
       };
     }
   | {
-      name: 'dissolve-group';
-      options: {
-        groupId: CategoryGroupEntity['id'];
-      };
-    }
-  | {
       name: 'confirm-payees-merge';
       options: {
         payeeIds: string[];

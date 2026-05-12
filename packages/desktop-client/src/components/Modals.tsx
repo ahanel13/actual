@@ -24,7 +24,6 @@ import { CategoryMenuModal } from './modals/CategoryMenuModal';
 import { CloseAccountModal } from './modals/CloseAccountModal';
 import { ConfirmCategoryDeleteModal } from './modals/ConfirmCategoryDeleteModal';
 import { ConfirmDeleteModal } from './modals/ConfirmDeleteModal';
-import { DissolveGroupModal } from './modals/DissolveGroupModal';
 import { ConfirmPayeesMergeModal } from './modals/ConfirmPayeesMergeModal';
 import { ConfirmTransactionEditModal } from './modals/ConfirmTransactionEditModal';
 import { ConfirmUnlinkAccountModal } from './modals/ConfirmUnlinkAccountModal';
@@ -153,8 +152,6 @@ export function Modals() {
 
         case 'confirm-category-delete':
           return <ConfirmCategoryDeleteModal key={key} {...modal.options} />;
-        case 'dissolve-group':
-          return <DissolveGroupModal key={key} {...modal.options} />;
 
         case 'confirm-payees-merge':
           return <ConfirmPayeesMergeModal key={key} {...modal.options} />;

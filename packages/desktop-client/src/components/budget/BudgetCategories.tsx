@@ -85,6 +85,60 @@ type LocalDragState =
   | DragState<CategoryGroupEntity>
   | null;
 
+function UngroupedDivider({
+  group,
+  onSave,
+  onDelete,
+}: {
+  group: CategoryGroupEntity;
+  onSave: (group: CategoryGroupEntity) => void;
+  onDelete: (id: CategoryGroupEntity['id']) => void;
+}) {
+  return (
+    <View
+      style={{
+        height: 6,
+        // make the row hover-able as a control surface
+        ':hover': {
+          height: 28,
+          backgroundColor: theme.tableHeaderBackground,
+        },
+        position: 'relative',
+        overflow: 'visible',
+        transition: 'height 0.1s',
+      }}
+    >
+      {/* The SidebarGroup popover handles the menu, but we need a way to
+          reach it. Render an inline minimal SidebarGroup just for the menu. */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+          flexDirection: 'row',
+          alignItems: 'center',
+          opacity: 0,
+          ':hover': { opacity: 1 },
+        }}
+      >
+        <View style={{ flex: '0 0 200px', paddingLeft: 10 }}>
+          <SidebarGroup
+            group={group}
+            collapsed={false}
+            onEdit={() => {}}
+            onSave={onSave}
+            onDelete={onDelete}
+            onToggleCollapse={() => {}}
+            onShowNewCategory={() => {}}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function IncomeTotalRow({ group }: { group: CategoryGroupEntity }) {
   const { t } = useTranslation();
   return (
@@ -572,20 +626,10 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
               break;
             case 'ungrouped-divider':
               content = (
-                <ExpenseGroup
+                <UngroupedDivider
                   group={item.value}
-                  editingCell={editingCell}
-                  collapsed={false}
-                  dragState={dragState}
-                  onEditName={onEditName}
                   onSave={_onSaveGroup}
                   onDelete={onDeleteGroup}
-                  onDragChange={onDragChange}
-                  onReorderGroup={onReorderGroup}
-                  onReorderCategory={onReorderCategory}
-                  onToggleCollapse={onToggleCollapse}
-                  onShowNewCategory={onShowNewCategory}
-                  onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
                 />
               );
               break;

@@ -94,6 +94,7 @@ export const schema = {
     name: f('string'),
     is_income: f('boolean'),
     is_savings: f('boolean'),
+    is_ungrouped: f('boolean'),
     hidden: f('boolean'),
     sort_order: f('float'),
     tombstone: f('boolean'),
