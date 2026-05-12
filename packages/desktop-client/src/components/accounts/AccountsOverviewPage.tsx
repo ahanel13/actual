@@ -662,6 +662,7 @@ export function AccountsOverviewPage() {
           position: 'sticky',
           top: 0,
           zIndex: 10,
+          flexShrink: 0,
         }}
       >
         <View style={{ marginBottom: 8 }}>

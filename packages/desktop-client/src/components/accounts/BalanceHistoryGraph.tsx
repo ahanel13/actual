@@ -236,7 +236,7 @@ export function BalanceHistoryGraph({
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <View ref={ref} style={{ margin: 10, ...style }}>
+    <View ref={ref} style={{ margin: 10, flexShrink: 0, ...style }}>
       <AutoSizer
         renderProp={({ width = 0, height = 0 }) => {
           if (width === 0 || height === 0) {
