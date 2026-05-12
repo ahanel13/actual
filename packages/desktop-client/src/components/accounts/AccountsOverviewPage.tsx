@@ -70,7 +70,7 @@ function AccountBalance({
         ...style,
       }}
     >
-      ${format(Math.abs(value as number), 'financial')}
+      {format(Math.abs(value as number), 'financial')}
     </span>
   );
 }
@@ -86,7 +86,7 @@ function NetWorthBalance({ style }: { style?: React.CSSProperties }) {
         ...style,
       }}
     >
-      ${format(Math.abs(value as number), 'financial')}
+      {format(Math.abs(value as number), 'financial')}
     </span>
   );
 }
@@ -417,7 +417,6 @@ function AccountGroup({ group }: { group: AccountGroup }) {
               color: groupBalance < 0 ? theme.errorText : theme.noticeTextLight,
             }}
           >
-            {groupBalance < 0 ? '-' : ''}$
             {format(Math.abs(groupBalance), 'financial')}
           </View>
         ) : (
@@ -509,7 +508,7 @@ function SummaryGroupRow({ group }: { group: AccountGroup }) {
         <Trans>{group.label}</Trans>
       </View>
       <View style={{ fontSize: 13, fontWeight: 500, color: theme.pageText }}>
-        ${format(Math.abs(balance), 'financial')}
+        {format(Math.abs(balance), 'financial')}
       </View>
     </View>
   );
@@ -527,7 +526,7 @@ function SectionTotal({
   const format = useFormat();
   return (
     <View style={{ fontSize: 13, fontWeight: 700, color: theme.pageText }}>
-      ${format(Math.abs(total), 'financial')}
+      {format(Math.abs(total), 'financial')}
     </View>
   );
 }
@@ -559,7 +558,7 @@ function SummarySection({
           {title}
         </View>
         <View style={{ fontSize: 13, fontWeight: 700, color: theme.pageText }}>
-          ${format(Math.abs(total), 'financial')}
+          {format(Math.abs(total), 'financial')}
         </View>
       </View>
 

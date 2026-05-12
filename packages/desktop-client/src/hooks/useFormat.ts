@@ -143,11 +143,20 @@ export function useFormat(): UseFormatResult {
         return formattedNumericValue;
       }
 
-      let sign = '';
+      // integerToCurrency / amountToCurrency now prepend '$' globally.
+      // Strip a pre-existing symbol so we don't double-up when re-applying
+      // user-pref position/spacing.
       let valueWithoutSign = formattedNumericValue;
-      if (formattedNumericValue.startsWith('-')) {
+      if (valueWithoutSign.startsWith(currencySymbol)) {
+        valueWithoutSign = valueWithoutSign.slice(currencySymbol.length);
+      }
+
+      // '-' is no longer emitted by integerToCurrency, but keep the strip
+      // for safety in case any consumer passes a pre-signed string.
+      let sign = '';
+      if (valueWithoutSign.startsWith('-')) {
         sign = '-';
-        valueWithoutSign = formattedNumericValue.slice(1);
+        valueWithoutSign = valueWithoutSign.slice(1);
       }
 
       const space = spaceEnabledPref === 'true' ? '\u202F' : '';

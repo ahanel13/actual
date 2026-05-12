@@ -10,7 +10,7 @@ import { Popover } from '@actual-app/components/popover';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
-import type { CategoryEntity, CategoryGroupEntity } from '@actual-app/core/types/models';
+import type { CategoryGroupEntity } from '@actual-app/core/types/models';
 
 import { BudgetMonthMenu } from '#components/budget/envelope/budgetsummary/BudgetMonthMenu';
 import { ToBudget } from '#components/budget/envelope/budgetsummary/ToBudget';
@@ -162,28 +162,6 @@ function SectionCard({
   );
 }
 
-function CategorySectionCard({ cat }: { cat: CategoryEntity }) {
-  const budget = (useEnvelopeSheetValue(
-    envelopeBudget.catBudgeted(cat.id),
-  ) ?? 0) as number;
-  const spent = (useEnvelopeSheetValue(
-    envelopeBudget.catSumAmount(cat.id),
-  ) ?? 0) as number;
-  const balance = (useEnvelopeSheetValue(
-    envelopeBudget.catBalance(cat.id),
-  ) ?? 0) as number;
-
-  return (
-    <SectionCard
-      label={cat.name}
-      budget={-budget}
-      actual={-spent}
-      remaining={balance}
-    />
-  );
-}
-
-// Reads its own sheet data and renders a group header + its categories
 function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
   const budget = (useEnvelopeSheetValue(
     envelopeBudget.groupBudgeted(group.id),
@@ -195,24 +173,13 @@ function GroupSectionCard({ group }: { group: CategoryGroupEntity }) {
     envelopeBudget.groupBalance(group.id),
   ) ?? 0) as number;
 
-  const visibleCategories = group.categories?.filter(c => !c.hidden) ?? [];
-
   return (
-    <>
-      <SectionCard
-        label={group.name}
-        budget={-budget}
-        actual={-spent}
-        remaining={balance}
-      />
-      {visibleCategories.length > 0 && (
-        <View style={{ paddingLeft: 12, marginTop: -4, marginBottom: 4 }}>
-          {visibleCategories.map(cat => (
-            <CategorySectionCard key={cat.id} cat={cat} />
-          ))}
-        </View>
-      )}
-    </>
+    <SectionCard
+      label={group.name}
+      budget={-budget}
+      actual={-spent}
+      remaining={balance}
+    />
   );
 }
 

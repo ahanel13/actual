@@ -75,11 +75,15 @@ export function makeBalanceAmountStyle(
   budgetedValue?: number | null,
 ) {
   // Converts an integer currency value to a normalized decimal amount.
-  // First converts the integer to currency format, then to a decimal amount.
-  // Uses integerToCurrency to display the value correctly according to user prefs.
-
-  const normalizeIntegerValue = (val: number | null | undefined) =>
-    typeof val === 'number' ? currencyToAmount(integerToCurrency(val)) : 0;
+  // Goes through integerToCurrency / currencyToAmount so user-pref decimal
+  // precision is respected. integerToCurrency no longer emits a leading '-'
+  // (sign is conveyed by color globally), so preserve the sign explicitly.
+  const normalizeIntegerValue = (val: number | null | undefined) => {
+    if (typeof val !== 'number') return 0;
+    const sign = val < 0 ? -1 : 1;
+    const magnitude = currencyToAmount(integerToCurrency(Math.abs(val))) ?? 0;
+    return sign * magnitude;
+  };
 
   const currencyValue = normalizeIntegerValue(value);
 

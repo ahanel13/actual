@@ -624,7 +624,7 @@ function HoldingsSection({
                 color: theme.pageText,
               }}
             >
-              {value > 0 ? `$${integerToCurrency(value)}` : '—'}
+              {value > 0 ? integerToCurrency(value) : '—'}
             </span>
             <div style={{ textAlign: 'right' }}>
               {gainLoss == null ? (

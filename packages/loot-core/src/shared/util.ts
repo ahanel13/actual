@@ -448,9 +448,10 @@ export function integerToCurrency(
   decimalPlaces: number = 2,
 ) {
   const divisor = Math.pow(10, decimalPlaces);
-  const amount = safeNumber(integerAmount) / divisor;
+  // Sign is conveyed by color in the UI, never by a leading '-'.
+  const amount = Math.abs(safeNumber(integerAmount)) / divisor;
 
-  return formatter.format(amount);
+  return '$' + formatter.format(amount);
 }
 
 export function integerToCurrencyWithDecimal(integerAmount: IntegerAmount) {
@@ -469,14 +470,17 @@ export function integerToCurrencyWithDecimal(integerAmount: IntegerAmount) {
 }
 
 export function amountToCurrency(amount: Amount): CurrencyAmount {
-  return getNumberFormat().formatter.format(amount);
+  return '$' + getNumberFormat().formatter.format(Math.abs(amount));
 }
 
 export function amountToCurrencyNoDecimal(amount: Amount): CurrencyAmount {
-  return getNumberFormat({
-    ...numberFormatConfig,
-    hideFraction: true,
-  }).formatter.format(amount);
+  return (
+    '$' +
+    getNumberFormat({
+      ...numberFormatConfig,
+      hideFraction: true,
+    }).formatter.format(Math.abs(amount))
+  );
 }
 
 export function currencyToAmount(currencyAmount: string): Amount | null {
