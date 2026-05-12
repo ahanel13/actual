@@ -614,6 +614,9 @@ export function AccountsOverviewPage() {
         paddingBottom: 40,
         flexDirection: 'column',
         minHeight: '100%',
+        // Reserve scrollbar gutter so the chart doesn't reflow / shrink the
+        // moment the account list becomes long enough to scroll.
+        scrollbarGutter: 'stable',
       }}
     >
       {/* Header */}
@@ -647,7 +650,8 @@ export function AccountsOverviewPage() {
         </Button>
       </View>
 
-      {/* Net worth chart */}
+      {/* Net worth chart — sticky so the combined total stays visible while
+          scrolling a long account list. */}
       <View
         style={{
           backgroundColor: theme.cardBackground,
@@ -655,6 +659,9 @@ export function AccountsOverviewPage() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           padding: '20px 24px',
           marginBottom: 20,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
         }}
       >
         <View style={{ marginBottom: 8 }}>
