@@ -7,10 +7,10 @@ import { View } from '@actual-app/components/view';
 import type { BalanceHistoryEntity } from '@actual-app/core/types/models';
 
 import {
-  useDeleteSnapshotMutation,
   useCreateSnapshotMutation,
-  useUpdateSnapshotMutation,
+  useDeleteSnapshotMutation,
   useExportSnapshotsMutation,
+  useUpdateSnapshotMutation,
 } from '#balance-history';
 import { useBalanceHistory } from '#hooks/useBalanceHistory';
 import { pushModal } from '#modals/modalsSlice';
@@ -150,10 +150,7 @@ export function BalanceHistoryManager({
           >
             <Trans>Export CSV</Trans>
           </Button>
-          <Button
-            variant="bare"
-            onPress={() => setShowAddRow(r => !r)}
-          >
+          <Button variant="bare" onPress={() => setShowAddRow(r => !r)}>
             + <Trans>Add</Trans>
           </Button>
         </View>
@@ -164,7 +161,13 @@ export function BalanceHistoryManager({
           <Trans>Loading…</Trans>
         </div>
       ) : snapshots.length === 0 && !showAddRow ? (
-        <div style={{ color: theme.pageTextSubdued, fontSize: 13, padding: '8px 0' }}>
+        <div
+          style={{
+            color: theme.pageTextSubdued,
+            fontSize: 13,
+            padding: '8px 0',
+          }}
+        >
           <Trans>
             No balance history yet. Import a CSV or add snapshots manually.
           </Trans>
@@ -216,7 +219,13 @@ export function BalanceHistoryManager({
                   />
                 </td>
                 <td style={{ ...cellStyle, textAlign: 'right' }}>
-                  <View style={{ flexDirection: 'row', gap: 4, justifyContent: 'flex-end' }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      gap: 4,
+                      justifyContent: 'flex-end',
+                    }}
+                  >
                     <Button
                       variant="primary"
                       onPress={onAdd}
@@ -260,7 +269,8 @@ export function BalanceHistoryManager({
                       style={{ cursor: 'pointer' }}
                       title={t('Click to edit')}
                     >
-                      ${(s.balance / 100).toLocaleString('en-US', {
+                      $
+                      {(s.balance / 100).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -271,7 +281,11 @@ export function BalanceHistoryManager({
                   <Button
                     variant="bare"
                     onPress={() => deleteSnapshot.mutate({ id: s.id })}
-                    style={{ padding: '2px 6px', fontSize: 12, color: theme.errorText }}
+                    style={{
+                      padding: '2px 6px',
+                      fontSize: 12,
+                      color: theme.errorText,
+                    }}
                     aria-label={t('Delete')}
                   >
                     ✕

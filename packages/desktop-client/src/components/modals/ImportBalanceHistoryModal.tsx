@@ -30,11 +30,14 @@ function normalizeDate(raw: string): string | null {
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
   // MM/DD/YYYY
   const mdy = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  if (mdy) {
+    return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  }
   // MM/DD/YY
   const mdyShort = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-  if (mdyShort)
+  if (mdyShort) {
     return `20${mdyShort[3]}-${mdyShort[1].padStart(2, '0')}-${mdyShort[2].padStart(2, '0')}`;
+  }
   return null;
 }
 
@@ -60,7 +63,8 @@ function parseCSV(text: string): { rows: ParsedRow[]; error?: string } {
   if (dateIdx === -1 || balanceIdx === -1) {
     return {
       rows: [],
-      error: 'Could not find "Date" and "Balance" columns. Make sure the CSV has a header row.',
+      error:
+        'Could not find "Date" and "Balance" columns. Make sure the CSV has a header row.',
     };
   }
 
@@ -288,7 +292,9 @@ export function ImportBalanceHistoryModal({
               <Button
                 variant="primary"
                 onPress={onConfirm}
-                isDisabled={importSnapshots.isPending || parsedRows.length === 0}
+                isDisabled={
+                  importSnapshots.isPending || parsedRows.length === 0
+                }
                 style={{ marginLeft: 10 }}
               >
                 {importSnapshots.isPending

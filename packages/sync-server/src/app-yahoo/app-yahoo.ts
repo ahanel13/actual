@@ -114,7 +114,10 @@ async function fetchChart(
         res.on('data', chunk => (raw += chunk));
         res.on('end', () => {
           try {
-            if (res.statusCode !== 200) { resolve(null); return; }
+            if (res.statusCode !== 200) {
+              resolve(null);
+              return;
+            }
             const data = JSON.parse(raw) as {
               chart?: {
                 result?: Array<{
@@ -126,7 +129,10 @@ async function fetchChart(
             const result = data?.chart?.result?.[0];
             const timestamps = result?.timestamp ?? [];
             const closes = result?.indicators?.quote?.[0]?.close ?? [];
-            if (timestamps.length === 0) { resolve(null); return; }
+            if (timestamps.length === 0) {
+              resolve(null);
+              return;
+            }
             resolve({ timestamps, closes });
           } catch {
             resolve(null);
@@ -134,13 +140,19 @@ async function fetchChart(
         });
       },
     );
-    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(null);
+    });
     req.on('error', () => resolve(null));
   });
 }
 
 app.post('/chart', async (req, res) => {
-  const { symbol, range = '1y' } = req.body as { symbol: string; range?: string };
+  const { symbol, range = '1y' } = req.body as {
+    symbol: string;
+    range?: string;
+  };
   if (!symbol) {
     res.status(400).json({ error: 'symbol is required' });
     return;

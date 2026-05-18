@@ -6,10 +6,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import {
-  useCreateHoldingMutation,
-  useUpdateHoldingMutation,
-} from '#investments/mutations';
-import {
   Modal,
   ModalButtons,
   ModalCloseButton,
@@ -17,6 +13,10 @@ import {
   ModalTitle,
 } from '#components/common/Modal';
 import { useHoldings } from '#hooks/useHoldings';
+import {
+  useCreateHoldingMutation,
+  useUpdateHoldingMutation,
+} from '#investments/mutations';
 import { closeModal } from '#modals/modalsSlice';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
@@ -59,9 +59,7 @@ export function AddEditHoldingModal({
 
   const [symbol, setSymbol] = useState(existing?.symbol ?? '');
   const [name, setName] = useState(existing?.name ?? '');
-  const [shares, setShares] = useState(
-    existing ? String(existing.shares) : '',
-  );
+  const [shares, setShares] = useState(existing ? String(existing.shares) : '');
   const [costBasis, setCostBasis] = useState(
     existing?.cost_basis_per_share != null
       ? String(existing.cost_basis_per_share)

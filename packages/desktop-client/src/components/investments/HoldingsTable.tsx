@@ -4,11 +4,11 @@ import { Button } from '@actual-app/components/button';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
+import { useHoldings } from '#hooks/useHoldings';
 import {
   useDeleteHoldingMutation,
   useRefreshPricesMutation,
 } from '#investments/mutations';
-import { useHoldings } from '#hooks/useHoldings';
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
@@ -42,8 +42,9 @@ export function HoldingsTable({ accountId }: HoldingsTableProps) {
   }, 0);
 
   const totalCost = holdings.reduce((sum, h) => {
-    if (h.cost_basis_per_share != null)
+    if (h.cost_basis_per_share != null) {
       return sum + h.shares * h.cost_basis_per_share;
+    }
     return sum;
   }, 0);
 
@@ -84,9 +85,7 @@ export function HoldingsTable({ accountId }: HoldingsTableProps) {
           marginBottom: 8,
         }}
       >
-        <span
-          style={{ fontSize: 14, fontWeight: 600, color: theme.pageText }}
-        >
+        <span style={{ fontSize: 14, fontWeight: 600, color: theme.pageText }}>
           <Trans>Holdings</Trans>
         </span>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -107,9 +106,7 @@ export function HoldingsTable({ accountId }: HoldingsTableProps) {
             onPress={() => refreshPrices.mutate()}
             isDisabled={refreshPrices.isPending || holdings.length === 0}
           >
-            {refreshPrices.isPending
-              ? t('Refreshing…')
-              : t('Refresh Prices')}
+            {refreshPrices.isPending ? t('Refreshing…') : t('Refresh Prices')}
           </Button>
         </View>
       </View>
@@ -222,7 +219,11 @@ export function HoldingsTable({ accountId }: HoldingsTableProps) {
                   </td>
                   <td style={{ ...cellStyle, textAlign: 'right' }}>
                     <View
-                      style={{ flexDirection: 'row', gap: 4, justifyContent: 'flex-end' }}
+                      style={{
+                        flexDirection: 'row',
+                        gap: 4,
+                        justifyContent: 'flex-end',
+                      }}
                     >
                       <Button
                         variant="bare"
@@ -306,9 +307,7 @@ export function HoldingsTable({ accountId }: HoldingsTableProps) {
                           : theme.errorText,
                   }}
                 >
-                  {totalGainLoss != null
-                    ? formatPercent(totalGainLoss)
-                    : '—'}
+                  {totalGainLoss != null ? formatPercent(totalGainLoss) : '—'}
                 </td>
                 <td
                   style={{
