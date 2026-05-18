@@ -67,6 +67,7 @@ export type AccountHandlers = {
   'plaid-get-items': typeof plaidGetItems;
   'plaid-sync-all': typeof plaidSyncAll;
   'plaid-reset': typeof plaidReset;
+  'plaid-remove-item': typeof plaidRemoveItem;
   'account-create': typeof createAccount;
   'account-close': typeof closeAccount;
   'account-reopen': typeof reopenAccount;
@@ -479,6 +480,54 @@ async function plaidGetItems() {
     {},
     { 'X-ACTUAL-TOKEN': userToken },
   );
+}
+
+async function plaidRemoveItem({ itemId }: { itemId: string }) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+
+  // Find any Actual accounts tied to this Plaid item and unlink them first.
+  // Their transactions stay; only the sync-source / bank linkage is cleared.
+  // unlinkAccount() also calls /plaid/remove-account when it's the last
+  // account on the bank — but we call it explicitly below anyway to handle
+  // the orphan-item case (no Actual accounts ever attached).
+  const linkedBanks = await db.all<Pick<db.DbBank, 'id'>>(
+    'SELECT id FROM banks WHERE bank_id = ? AND tombstone = 0',
+    [itemId],
+  );
+  const bankIds = linkedBanks.map(b => b.id);
+
+  if (bankIds.length > 0) {
+    const placeholders = bankIds.map(() => '?').join(',');
+    const linkedAccounts = await db.all<Pick<db.DbAccount, 'id'>>(
+      `SELECT id FROM accounts WHERE bank IN (${placeholders}) AND tombstone = 0`,
+      bankIds,
+    );
+    for (const acct of linkedAccounts) {
+      await unlinkAccount({ id: acct.id });
+    }
+  }
+
+  // Always call /plaid/remove-account even if no Actual accounts were attached,
+  // to release the orphan Plaid Item upstream and wipe the local plaid_items row.
+  try {
+    await post(
+      serverConfig.PLAID_SERVER + '/remove-account',
+      { item_id: itemId },
+      { 'X-ACTUAL-TOKEN': userToken },
+    );
+  } catch (error) {
+    logger.log({ error });
+    return { error: String(error) };
+  }
+
+  return { ok: true };
 }
 
 async function plaidReset() {
@@ -1579,6 +1628,7 @@ app.method('plaid-mark-item-reauthed', plaidMarkItemReauthed);
 app.method('plaid-get-items', plaidGetItems);
 app.method('plaid-sync-all', plaidSyncAll);
 app.method('plaid-reset', plaidReset);
+app.method('plaid-remove-item', plaidRemoveItem);
 app.method('account-create', mutator(undoable(createAccount)));
 app.method('account-close', mutator(closeAccount));
 app.method('account-reopen', mutator(undoable(reopenAccount)));
