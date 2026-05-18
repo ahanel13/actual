@@ -42,12 +42,14 @@ export function createCategory(cat, sheetName, prevSheetName, start, end) {
   sheet.get().createDynamic(sheetName, 'sum-amount-' + cat.id, {
     initialValue: 0,
     run: () => {
+      const offbudgetClause =
+        getBudgetType() === 'tracking' ? '' : 'AND a.offbudget = 0';
       // Making this sync is faster!
       const rows = db.runQuery<{ amount: number }>(
         `SELECT SUM(amount) as amount FROM v_transactions_internal_alive t
            LEFT JOIN accounts a ON a.id = t.account
          WHERE t.date >= ${start} AND t.date <= ${end}
-           AND category = '${cat.id}' AND a.offbudget = 0`,
+           AND category = '${cat.id}' ${offbudgetClause}`,
         [],
         true,
       );
@@ -322,6 +324,15 @@ export async function setType(type) {
   const meta = sheet.get().meta();
   if (type === meta.budgetType) {
     return;
+  }
+
+  const previousType = meta.budgetType;
+  if (previousType === 'envelope' && type === 'tracking') {
+    db.runQuery(
+      `INSERT OR IGNORE INTO reflect_budgets (id, month, category, amount, carryover, goal, long_goal)
+       SELECT id, month, category, amount, carryover, goal, long_goal FROM zero_budgets`,
+      [],
+    );
   }
 
   meta.budgetType = type;

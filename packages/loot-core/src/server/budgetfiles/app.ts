@@ -447,6 +447,8 @@ async function createBudget({
     return { error };
   }
 
+  await budget.setType('tracking');
+
   if (!avoidUpload && !testMode) {
     try {
       await cloudStorage.upload();
