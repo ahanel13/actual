@@ -75,6 +75,11 @@ bundle.mobile.js.map
 # Claude Code
 .claude/worktrees/*
 .claude/settings.local.json
+.claude/settings.json
+.claude/plans/
+
+# Self-host TLS material (per-instance, includes the private key)
+/selfhost.*
 
 # Misc
 .#*
