@@ -85,40 +85,40 @@ export const border = '#e8ecf0';
 export const selected = '#b3d9ff';
 
 // Monarch warm gray palette (beige-toned, not blue-gray)
-export const monarchGray1  = '#fbfaf8';
-export const monarchGray2  = '#f6f5f3';
-export const monarchGray3  = '#efece9';
-export const monarchGray4  = '#ebe8e5';
-export const monarchGray5  = '#e4e1de';
-export const monarchGray6  = '#dcd9d6';
-export const monarchGray7  = '#d1cecb';
-export const monarchGray8  = '#bebbb8';
-export const monarchGray9  = '#8f8c8a';
+export const monarchGray1 = '#fbfaf8';
+export const monarchGray2 = '#f6f5f3';
+export const monarchGray3 = '#efece9';
+export const monarchGray4 = '#ebe8e5';
+export const monarchGray5 = '#e4e1de';
+export const monarchGray6 = '#dcd9d6';
+export const monarchGray7 = '#d1cecb';
+export const monarchGray8 = '#bebbb8';
+export const monarchGray9 = '#8f8c8a';
 export const monarchGray10 = '#84827f';
 export const monarchGray11 = '#777573';
 export const monarchGray12 = '#22201d';
 
 // Monarch orange — brand / primary action color
-export const monarchOrange3  = '#ffe9de';
-export const monarchOrange4  = '#ffd7c4';
-export const monarchOrange9  = '#ff692d';
+export const monarchOrange3 = '#ffe9de';
+export const monarchOrange4 = '#ffd7c4';
+export const monarchOrange9 = '#ff692d';
 export const monarchOrange10 = '#f35b16';
 export const monarchOrange11 = '#d64700';
 export const monarchOrange12 = '#592c1d';
 
 // Monarch green — positive / income
-export const monarchGreen3  = '#e6f6eb';
-export const monarchGreen9  = '#30a46c';
+export const monarchGreen3 = '#e6f6eb';
+export const monarchGreen9 = '#30a46c';
 export const monarchGreen11 = '#218358';
 export const monarchGreen12 = '#193b2d';
 
 // Monarch red — negative / danger
-export const monarchRed3  = '#feebec';
-export const monarchRed9  = '#e5484d';
+export const monarchRed3 = '#feebec';
+export const monarchRed9 = '#e5484d';
 export const monarchRed11 = '#ce2c31';
 
 // Monarch blue — input focus / links
-export const monarchBlue9  = '#00a2c7';
+export const monarchBlue9 = '#00a2c7';
 export const monarchBlue10 = '#0797b9';
 export const monarchBlue11 = '#107d98';
 

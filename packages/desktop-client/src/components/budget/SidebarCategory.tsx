@@ -22,15 +22,24 @@ import { useGlobalPref } from '#hooks/useGlobalPref';
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
 
 const CATEGORY_COLORS = [
-  '#f97316', '#ef4444', '#8b5cf6', '#3b82f6', '#10b981',
-  '#f59e0b', '#ec4899', '#06b6d4', '#6366f1', '#84cc16',
-  '#14b8a6', '#a855f7',
+  '#f97316',
+  '#ef4444',
+  '#8b5cf6',
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+  '#ec4899',
+  '#06b6d4',
+  '#6366f1',
+  '#84cc16',
+  '#14b8a6',
+  '#a855f7',
 ];
 
 function getCategoryColor(id: string): string {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    hash = (hash << 5) - hash + id.charCodeAt(i);
     hash |= 0;
   }
   return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length];

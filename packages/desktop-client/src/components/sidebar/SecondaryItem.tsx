@@ -53,9 +53,7 @@ export function SecondaryItem({
   );
 
   return (
-    <View
-      style={{ flexShrink: 0, paddingLeft: 8, paddingRight: 8, ...style }}
-    >
+    <View style={{ flexShrink: 0, paddingLeft: 8, paddingRight: 8, ...style }}>
       <ItemContent
         style={{
           ...accountNameStyle,
@@ -76,7 +74,7 @@ export function SecondaryItem({
           backgroundColor: theme.sidebarItemAccentSelected,
           borderRadius: 8,
           color: theme.sidebarItemTextSelected,
-          fontWeight: fontWeight,
+          fontWeight,
         }}
       >
         {content}
