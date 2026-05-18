@@ -203,6 +203,7 @@ __metadata:
     migrate: "npm:^2.1.0"
     nodemon: "npm:^3.1.14"
     openid-client: "npm:^5.7.1"
+    plaid: "npm:^25.0.0"
     pluggy-sdk: "npm:^0.83.0"
     supertest: "npm:^7.2.2"
     typescript-strict-plugin: "npm:^2.4.4"
@@ -283,6 +284,7 @@ __metadata:
     react-hotkeys-hook: "npm:^5.2.4"
     react-i18next: "npm:^16.6.6"
     react-markdown: "npm:^10.1.0"
+    react-plaid-link: "npm:^3.6.0"
     react-redux: "npm:^9.2.0"
     react-router: "npm:7.13.1"
     react-simple-pull-to-refresh: "npm:^1.3.4"
@@ -11013,6 +11015,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"agent-base@npm:6":
+  version: 6.0.2
+  resolution: "agent-base@npm:6.0.2"
+  dependencies:
+    debug: "npm:4"
+  checksum: 10/21fb903e0917e5cb16591b4d0ef6a028a54b83ac30cd1fca58dece3d4e0990512a8723f9f83130d88a41e2af8b1f7be1386fda3ea2d181bb1a62155e75e95e23
+  languageName: node
+  linkType: hard
+
 "agent-base@npm:^7.1.0, agent-base@npm:^7.1.2":
   version: 7.1.4
   resolution: "agent-base@npm:7.1.4"
@@ -11520,6 +11531,18 @@ __metadata:
   version: 4.11.1
   resolution: "axe-core@npm:4.11.1"
   checksum: 10/bbc8e8959258a229b92fbaa73437050825579815051cac7b0fdbb6752946fea226e403bfeeef3d60d712477bdd4c01afdc8455f27c3d85e4251df88b032b6250
+  languageName: node
+  linkType: hard
+
+"axios@npm:^1.6.2":
+  version: 1.16.1
+  resolution: "axios@npm:1.16.1"
+  dependencies:
+    follow-redirects: "npm:^1.16.0"
+    form-data: "npm:^4.0.5"
+    https-proxy-agent: "npm:^5.0.1"
+    proxy-from-env: "npm:^2.1.0"
+  checksum: 10/9b6218cf96321cfbbf8f160658d695367114bcf4fb62492bdc1ccd647f184b5c71ae400e5ecaaf41079bc561de2ecbaf1fec63f398b3ec53389beff7694df64c
   languageName: node
   linkType: hard
 
@@ -16576,7 +16599,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.16.0":
   version: 1.16.0
   resolution: "follow-redirects@npm:1.16.0"
   peerDependenciesMeta:
@@ -17955,6 +17978,16 @@ __metadata:
   version: 1.0.0
   resolution: "https-browserify@npm:1.0.0"
   checksum: 10/2d707c457319e1320adf0e7556174c190865fb345b6a183f033cee440f73221dbe7fa3f0adcffb1e6b0664726256bd44771a82e50fe6c66976c10b237100536a
+  languageName: node
+  linkType: hard
+
+"https-proxy-agent@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "https-proxy-agent@npm:5.0.1"
+  dependencies:
+    agent-base: "npm:6"
+    debug: "npm:4"
+  checksum: 10/f0dce7bdcac5e8eaa0be3c7368bb8836ed010fb5b6349ffb412b172a203efe8f807d9a6681319105ea1b6901e1972c7b5ea899672a7b9aad58309f766dcbe0df
   languageName: node
   linkType: hard
 
@@ -22809,6 +22842,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"plaid@npm:^25.0.0":
+  version: 25.0.0
+  resolution: "plaid@npm:25.0.0"
+  dependencies:
+    axios: "npm:^1.6.2"
+  checksum: 10/b65cbfca5a7ab9e2760d59ec54bdb72e9b8fd2dd17822620ef77fc06cab783a43417f16d4335cb29c9f7154178174286f33eac3609933f9a266d8b83a416f2a3
+  languageName: node
+  linkType: hard
+
 "playwright-core@npm:1.59.1":
   version: 1.59.1
   resolution: "playwright-core@npm:1.59.1"
@@ -23948,6 +23990,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"proxy-from-env@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "proxy-from-env@npm:2.1.0"
+  checksum: 10/fbbaf4dab2a6231dc9e394903a5f66f20475e36b734335790b46feb9da07c37d6b32e2c02e3e2ea4d4b23774c53d8562e5b7cc73282cb43f4a597b7eacaee2ee
+  languageName: node
+  linkType: hard
+
 "pstree.remy@npm:^1.1.8":
   version: 1.1.8
   resolution: "pstree.remy@npm:1.1.8"
@@ -24518,6 +24567,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-plaid-link@npm:^3.6.0":
+  version: 3.6.1
+  resolution: "react-plaid-link@npm:3.6.1"
+  dependencies:
+    prop-types: "npm:^15.7.2"
+    react-script-hook: "npm:^1.7.2"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: 10/67f941c4c9664388981691a21bc3193653609bb85f73b8c70b84d80e06c784823f63878247d6ee37d7a36d50fd98e5e5e9ff08a18f843c4d5035ff2d80a83e67
+  languageName: node
+  linkType: hard
+
 "react-redux@npm:8.x.x || 9.x.x, react-redux@npm:^9.2.0":
   version: 9.2.0
   resolution: "react-redux@npm:9.2.0"
@@ -24646,6 +24708,16 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10/da3c9f52ccb968647090013f735b8506b5f6a0290a43259d78e9ef6a664715978b6de90417e56b18717ce4ffc306e02826f0418e046aae22936a6f8cf386bc79
+  languageName: node
+  linkType: hard
+
+"react-script-hook@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "react-script-hook@npm:1.7.2"
+  peerDependencies:
+    react: ^16.8.6 || 17 - 18
+    react-dom: ^16.8.6 || 17 - 18
+  checksum: 10/a9ed431997fa9df629bd3ec51302141173d8d1d77fa561127fa8fee088769af9af25f14b7e655715e3c9ee9b5fc161dfab413706d9ddbb72c577021959654482
   languageName: node
   linkType: hard
 

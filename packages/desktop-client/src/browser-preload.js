@@ -23,6 +23,20 @@ const ACTUAL_VERSION = Platform.isPlaywright
 
 // *** Start the backend ***
 
+// Auto-enable absurd-sql's non-SAB fallback when SharedArrayBuffer isn't
+// available (e.g. on iOS Safari, or when the server intentionally doesn't
+// send COOP/COEP to keep third-party widgets like Plaid Link working).
+// Without this, the user would see a "FatalError / SharedArrayBuffer missing"
+// screen and have to manually click "I understand the risks" once.
+if (typeof window !== 'undefined' && !window.SharedArrayBuffer) {
+  try {
+    window.localStorage.setItem('SharedArrayBufferOverride', 'true');
+  } catch {
+    // localStorage may be unavailable in some private-browsing contexts;
+    // the existing FatalError screen will surface the issue if so.
+  }
+}
+
 let worker = null;
 // The regular Worker running the backend, created only on the leader tab
 let localBackendWorker = null;

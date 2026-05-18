@@ -312,6 +312,44 @@ async function downloadPluggyAiTransactions(
   return retVal;
 }
 
+async function downloadPlaidTransactions(
+  acctId: AccountEntity['id'],
+  bankId: string,
+) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) return;
+
+  logger.log('Pulling transactions from Plaid');
+
+  const res = await post(
+    getServer().PLAID_SERVER + '/transactions',
+    {
+      item_id: bankId,
+      accountId: acctId,
+    },
+    {
+      'X-ACTUAL-TOKEN': userToken,
+    },
+    60000,
+  );
+
+  if (res.error_code) {
+    throw BankSyncError(res.error_type, res.error_code);
+  } else if ('error' in res) {
+    throw BankSyncError('Connection', res.error);
+  }
+
+  const singleRes = res as BankSyncResponse;
+  const retVal = {
+    transactions: singleRes.transactions.all,
+    accountBalance: singleRes.balances,
+    startingBalance: singleRes.startingBalance,
+  };
+
+  logger.log('Response:', retVal);
+  return retVal;
+}
+
 async function resolvePayee(trans, payeeName, payeesToCreate) {
   if (trans.payee == null && payeeName) {
     // First check our registry of new payees (to avoid a db access)
@@ -965,7 +1003,10 @@ async function processBankSyncDownload(
     // Use custom starting balance if provided, otherwise calculate it
     if (customStartingBalance !== undefined) {
       balanceToUse = customStartingBalance;
-    } else if (acctRow.account_sync_source === 'simpleFin') {
+    } else if (
+      acctRow.account_sync_source === 'simpleFin' ||
+      acctRow.account_sync_source === 'plaid'
+    ) {
       const previousBalance = transactions.reduce((total, trans) => {
         return (
           total - parseInt(trans.transactionAmount.amount.replace('.', ''))
@@ -1067,6 +1108,8 @@ export async function syncAccount(
     download = await downloadSimpleFinTransactions(acctId, syncStartDate);
   } else if (acctRow.account_sync_source === 'pluggyai') {
     download = await downloadPluggyAiTransactions(acctId, syncStartDate);
+  } else if (acctRow.account_sync_source === 'plaid') {
+    download = await downloadPlaidTransactions(acctId, bankId);
   } else if (acctRow.account_sync_source === 'goCardless') {
     download = await downloadGoCardlessTransactions(
       userId,

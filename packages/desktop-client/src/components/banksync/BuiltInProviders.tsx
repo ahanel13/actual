@@ -13,6 +13,7 @@ import { View } from '@actual-app/components/view';
 import { Warning } from '#components/alerts';
 import { Link } from '#components/common/Link';
 
+import { PlaidItemsStatus } from './PlaidItemsStatus';
 import type { BuiltInBankSyncProviderState } from './useBuiltInBankSyncProviders';
 
 type BuiltInProvidersProps = {
@@ -190,6 +191,14 @@ export function BuiltInProviders({
                 >
                   <Trans>Link bank account</Trans>
                 </ButtonWithLoading>
+                {provider.onSyncAll && provider.isConfigured && (
+                  <Button
+                    variant="bare"
+                    onPress={() => provider.onSyncAll?.()}
+                  >
+                    <Trans>Sync all</Trans>
+                  </Button>
+                )}
               </View>
             </View>
           ))}
@@ -208,6 +217,8 @@ export function BuiltInProviders({
           .
         </Warning>
       )}
+
+      <PlaidItemsStatus />
     </View>
   );
 }

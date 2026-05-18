@@ -7,12 +7,16 @@ import type {
   BankSyncProviders,
 } from '@actual-app/core/types/models';
 import type { SyncServerSimpleFinAccount } from '@actual-app/core/types/models/simplefin';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { plaidQueries } from '#accounts/plaidQueries';
 
 import { useAuth } from '#auth/AuthProvider';
 import { Permissions } from '#auth/types';
 import { useMultiuserEnabled } from '#components/ServerContext';
 import { authorizeBank } from '#gocardless';
 import { useGoCardlessStatus } from '#hooks/useGoCardlessStatus';
+import { usePlaidStatus } from '#hooks/usePlaidStatus';
 import { usePluggyAiStatus } from '#hooks/usePluggyAiStatus';
 import { useSimpleFinStatus } from '#hooks/useSimpleFinStatus';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
@@ -58,6 +62,7 @@ export type BuiltInBankSyncProviderState = {
   onConfigure: ProviderAction;
   onLink: ProviderAction;
   onReset: ProviderAction;
+  onSyncAll?: ProviderAction;
 };
 
 type SecretSetResponse = {
@@ -88,6 +93,7 @@ export function useBuiltInBankSyncProviders({
 }: UseBuiltInBankSyncProvidersOptions = {}) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const syncServerStatus = useSyncServerStatus();
   const { hasPermission } = useAuth();
   const multiuserEnabled = useMultiuserEnabled();
@@ -103,12 +109,16 @@ export function useBuiltInBankSyncProviders({
   const [isPluggyAiSetupComplete, setIsPluggyAiSetupComplete] = useState<
     boolean | null
   >(null);
+  const [isPlaidSetupComplete, setIsPlaidSetupComplete] = useState<
+    boolean | null
+  >(null);
   const [loadingSimpleFinAccounts, setLoadingSimpleFinAccounts] =
     useState(false);
 
   const { configuredGoCardless } = useGoCardlessStatus();
   const { configuredSimpleFin } = useSimpleFinStatus();
   const { configuredPluggyAi } = usePluggyAiStatus();
+  const { configuredPlaid } = usePlaidStatus();
 
   useEffect(() => {
     setIsGoCardlessSetupComplete(configuredGoCardless);
@@ -121,6 +131,10 @@ export function useBuiltInBankSyncProviders({
   useEffect(() => {
     setIsPluggyAiSetupComplete(configuredPluggyAi);
   }, [configuredPluggyAi]);
+
+  useEffect(() => {
+    setIsPlaidSetupComplete(configuredPlaid);
+  }, [configuredPlaid]);
 
   const onGoCardlessInit = useCallback(() => {
     dispatch(
@@ -155,6 +169,19 @@ export function useBuiltInBankSyncProviders({
           name: 'pluggyai-init',
           options: {
             onSuccess: () => setIsPluggyAiSetupComplete(true),
+          },
+        },
+      }),
+    );
+  }, [dispatch]);
+
+  const onPlaidInit = useCallback(() => {
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'plaid-init',
+          options: {
+            onSuccess: () => setIsPlaidSetupComplete(true),
           },
         },
       }),
@@ -222,6 +249,58 @@ export function useBuiltInBankSyncProviders({
       notifyResetFailure('SimpleFIN', error);
     }
   }, [notifyResetFailure]);
+
+  const onPlaidReset = useCallback(async () => {
+    try {
+      // /plaid/reset releases every Plaid Item upstream, wipes the items
+      // table, and clears the encrypted credential secrets in one shot.
+      const result = (await send('plaid-reset')) as {
+        status?: string;
+        error?: string;
+        reason?: string;
+      };
+      if (result?.error || result?.status === 'error') {
+        throw new Error(result?.reason || result?.error || 'Plaid reset failed');
+      }
+      setIsPlaidSetupComplete(false);
+      void queryClient.invalidateQueries({ queryKey: plaidQueries.items() });
+    } catch (error) {
+      notifyResetFailure('Plaid', error);
+    }
+  }, [notifyResetFailure, queryClient]);
+
+  const onPlaidSyncAll = useCallback(async () => {
+    try {
+      await send('plaid-sync-all');
+      void queryClient.invalidateQueries({ queryKey: plaidQueries.items() });
+    } catch (error) {
+      dispatch(
+        addNotification({
+          notification: {
+            type: 'error',
+            title: t('Plaid sync failed'),
+            message: error instanceof Error ? error.message : String(error),
+            timeout: 5000,
+          },
+        }),
+      );
+    }
+  }, [dispatch, queryClient, t]);
+
+  const onConnectPlaid = useCallback(() => {
+    if (!isPlaidSetupComplete) {
+      onPlaidInit();
+      return;
+    }
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'plaid-link',
+          options: { upgradingAccountId },
+        },
+      }),
+    );
+  }, [dispatch, isPlaidSetupComplete, onPlaidInit, upgradingAccountId]);
 
   const onPluggyAiReset = useCallback(async () => {
     try {
@@ -392,6 +471,7 @@ export function useBuiltInBankSyncProviders({
     goCardless: Boolean(isGoCardlessSetupComplete),
     simpleFin: Boolean(isSimpleFinSetupComplete),
     pluggyai: Boolean(isPluggyAiSetupComplete),
+    plaid: Boolean(isPlaidSetupComplete),
   } satisfies Record<BankSyncProviders, boolean>;
 
   const providers = useMemo<BuiltInBankSyncProviderState[]>(
@@ -428,30 +508,51 @@ export function useBuiltInBankSyncProviders({
           };
         }
 
+        if (providerId === 'pluggyai') {
+          return {
+            id: providerId,
+            displayName: 'Pluggy.ai',
+            description: t(
+              'Link a Brazilian bank account to automatically download transactions.',
+            ),
+            isConfigured: configuredProviders.pluggyai,
+            canConfigure: canConfigureProviders,
+            onConfigure: onPluggyAiInit,
+            onLink: onConnectPluggyAi,
+            onReset: onPluggyAiReset,
+          };
+        }
+
         return {
           id: providerId,
-          displayName: 'Pluggy.ai',
+          displayName: 'Plaid',
           description: t(
-            'Link a Brazilian bank account to automatically download transactions.',
+            'Link a North American bank account via Plaid (production credentials required).',
           ),
-          isConfigured: configuredProviders.pluggyai,
+          isConfigured: configuredProviders.plaid,
           canConfigure: canConfigureProviders,
-          onConfigure: onPluggyAiInit,
-          onLink: onConnectPluggyAi,
-          onReset: onPluggyAiReset,
+          onConfigure: onPlaidInit,
+          onLink: onConnectPlaid,
+          onReset: onPlaidReset,
+          onSyncAll: onPlaidSyncAll,
         };
       }),
     [
       canConfigureProviders,
       configuredProviders.goCardless,
+      configuredProviders.plaid,
       configuredProviders.pluggyai,
       configuredProviders.simpleFin,
       loadingSimpleFinAccounts,
       onConnectGoCardless,
+      onConnectPlaid,
       onConnectPluggyAi,
       onConnectSimpleFin,
       onGoCardlessInit,
       onGoCardlessReset,
+      onPlaidInit,
+      onPlaidReset,
+      onPlaidSyncAll,
       onPluggyAiInit,
       onPluggyAiReset,
       onSimpleFinInit,

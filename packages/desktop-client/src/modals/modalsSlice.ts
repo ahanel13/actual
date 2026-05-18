@@ -147,6 +147,19 @@ export type Modal =
       };
     }
   | {
+      name: 'plaid-init';
+      options: {
+        onSuccess: () => void;
+      };
+    }
+  | {
+      name: 'plaid-link';
+      options: {
+        upgradingAccountId?: string;
+        reauthItemId?: string;
+      };
+    }
+  | {
       name: 'gocardless-external-msg';
       options: {
         onMoveExternal: (arg: {

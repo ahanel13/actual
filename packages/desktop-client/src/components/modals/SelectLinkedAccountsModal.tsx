@@ -10,22 +10,25 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
+import { getOffBudgetForType } from '@actual-app/core/shared/accounts';
 import { currentDay, subDays } from '@actual-app/core/shared/months';
 import type {
   AccountEntity,
   SyncServerGoCardlessAccount,
+  SyncServerPlaidAccount,
   SyncServerPluggyAiAccount,
   SyncServerSimpleFinAccount,
 } from '@actual-app/core/types/models';
+import type { AccountType } from '@actual-app/core/types/models';
 import { format as formatDate, parseISO } from 'date-fns';
 
 import {
   useLinkAccountMutation,
+  useLinkAccountPlaidMutation,
   useLinkAccountPluggyAiMutation,
   useLinkAccountSimpleFinMutation,
   useUnlinkAccountMutation,
 } from '#accounts';
-import type { AccountType } from '@actual-app/core/types/models';
 import { Autocomplete } from '#components/autocomplete/Autocomplete';
 import type { AutocompleteItem } from '#components/autocomplete/Autocomplete';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
@@ -41,33 +44,22 @@ import { transactions } from '#queries';
 import { liveQuery } from '#queries/liveQuery';
 import { useDispatch } from '#redux';
 
-function useAddBudgetAccountOptions() {
+function useAddNewAccountOption() {
   const { t } = useTranslation();
 
-  const addOnBudgetAccountOption = {
-    id: 'new-on',
-    name: t('Create new account'),
-  };
-  const addOffBudgetAccountOption = {
-    id: 'new-off',
-    name: t('Create new account (off budget)'),
+  const addNewAccountOption = {
+    id: 'new',
+    name: t('Add as new account'),
   };
 
-  return { addOnBudgetAccountOption, addOffBudgetAccountOption };
+  return { addNewAccountOption };
 }
 
-/**
- * Helper to determine if the chosen account option represents creating a new account.
- */
 function isNewAccountOption(
   chosenAccountId: string | undefined,
-  addOnBudgetOptionId: string,
-  addOffBudgetOptionId: string,
+  addNewOptionId: string,
 ): boolean {
-  return (
-    chosenAccountId === addOnBudgetOptionId ||
-    chosenAccountId === addOffBudgetOptionId
-  );
+  return chosenAccountId === addNewOptionId;
 }
 
 export type SelectLinkedAccountsModalProps =
@@ -88,14 +80,31 @@ export type SelectLinkedAccountsModalProps =
       externalAccounts: SyncServerPluggyAiAccount[];
       syncSource: 'pluggyai';
       upgradingAccountId?: string;
+    }
+  | {
+      requisitionId?: undefined;
+      externalAccounts: SyncServerPlaidAccount[];
+      syncSource: 'plaid';
+      plaidItemId: string;
+      plaidInstitution: { institution_id: string | null; name: string | null };
+      upgradingAccountId?: string;
     };
 
-export function SelectLinkedAccountsModal({
-  requisitionId = undefined,
-  externalAccounts,
-  syncSource,
-  upgradingAccountId,
-}: SelectLinkedAccountsModalProps) {
+export function SelectLinkedAccountsModal(
+  props: SelectLinkedAccountsModalProps,
+) {
+  const {
+    requisitionId = undefined,
+    externalAccounts,
+    syncSource,
+    upgradingAccountId,
+  } = props as SelectLinkedAccountsModalProps & {
+    requisitionId?: string;
+  };
+  const plaidItemId =
+    props.syncSource === 'plaid' ? props.plaidItemId : undefined;
+  const plaidInstitution =
+    props.syncSource === 'plaid' ? props.plaidInstitution : undefined;
   const propsWithSortedExternalAccounts =
     useMemo<SelectLinkedAccountsModalProps>(() => {
       const toSort = externalAccounts ? [...externalAccounts] : [];
@@ -117,6 +126,14 @@ export function SelectLinkedAccountsModal({
             externalAccounts: toSort as SyncServerPluggyAiAccount[],
             upgradingAccountId,
           };
+        case 'plaid':
+          return {
+            syncSource: 'plaid',
+            externalAccounts: toSort as SyncServerPlaidAccount[],
+            plaidItemId: plaidItemId!,
+            plaidInstitution: plaidInstitution!,
+            upgradingAccountId,
+          };
         case 'goCardless':
           return {
             syncSource: 'goCardless',
@@ -127,7 +144,14 @@ export function SelectLinkedAccountsModal({
         default:
           throw new Error(`Unrecognized sync source: ${String(syncSource)}`);
       }
-    }, [externalAccounts, syncSource, requisitionId, upgradingAccountId]);
+    }, [
+      externalAccounts,
+      syncSource,
+      requisitionId,
+      plaidItemId,
+      plaidInstitution,
+      upgradingAccountId,
+    ]);
 
   const { t } = useTranslation();
   const { isNarrowWidth } = useResponsive();
@@ -177,13 +201,13 @@ export function SelectLinkedAccountsModal({
   const [accountTypes, setAccountTypes] = useState<
     Record<string, AccountType | undefined>
   >({});
-  const { addOnBudgetAccountOption, addOffBudgetAccountOption } =
-    useAddBudgetAccountOptions();
+  const { addNewAccountOption } = useAddNewAccountOption();
 
   const linkAccount = useLinkAccountMutation();
   const unlinkAccount = useUnlinkAccountMutation();
   const linkAccountSimpleFin = useLinkAccountSimpleFinMutation();
   const linkAccountPluggyAi = useLinkAccountPluggyAiMutation();
+  const linkAccountPlaid = useLinkAccountPlaidMutation();
 
   async function onNext() {
     const chosenLocalAccountIds = Object.values(chosenAccounts);
@@ -202,7 +226,14 @@ export function SelectLinkedAccountsModal({
           propsWithSortedExternalAccounts.externalAccounts.findIndex(
             account => account.account_id === chosenExternalAccountId,
           );
-        const offBudget = chosenLocalAccountId === addOffBudgetAccountOption.id;
+        const isNew = isNewAccountOption(
+          chosenLocalAccountId,
+          addNewAccountOption.id,
+        );
+        const accountType = isNew
+          ? accountTypes[chosenExternalAccountId]
+          : undefined;
+        const offBudget = getOffBudgetForType(accountType) === 1;
 
         // Skip linking accounts that were previously linked with
         // a different bank.
@@ -219,13 +250,7 @@ export function SelectLinkedAccountsModal({
         const startingBalance =
           customSettings?.amount != null ? customSettings.amount : undefined;
 
-        const accountType = isNewAccountOption(
-          chosenLocalAccountId,
-          addOnBudgetAccountOption.id,
-          addOffBudgetAccountOption.id,
-        )
-          ? accountTypes[chosenExternalAccountId]
-          : undefined;
+        const upgradingId = isNew ? undefined : chosenLocalAccountId;
 
         if (propsWithSortedExternalAccounts.syncSource === 'simpleFin') {
           linkAccountSimpleFin.mutate({
@@ -233,11 +258,7 @@ export function SelectLinkedAccountsModal({
               propsWithSortedExternalAccounts.externalAccounts[
                 externalAccountIndex
               ],
-            upgradingId:
-              chosenLocalAccountId !== addOnBudgetAccountOption.id &&
-              chosenLocalAccountId !== addOffBudgetAccountOption.id
-                ? chosenLocalAccountId
-                : undefined,
+            upgradingId,
             offBudget,
             type: accountType,
             startingDate,
@@ -249,11 +270,20 @@ export function SelectLinkedAccountsModal({
               propsWithSortedExternalAccounts.externalAccounts[
                 externalAccountIndex
               ],
-            upgradingId:
-              chosenLocalAccountId !== addOnBudgetAccountOption.id &&
-              chosenLocalAccountId !== addOffBudgetAccountOption.id
-                ? chosenLocalAccountId
-                : undefined,
+            upgradingId,
+            offBudget,
+            type: accountType,
+            startingDate,
+            startingBalance,
+          });
+        } else if (propsWithSortedExternalAccounts.syncSource === 'plaid') {
+          linkAccountPlaid.mutate({
+            externalAccount: propsWithSortedExternalAccounts.externalAccounts[
+              externalAccountIndex
+            ] as SyncServerPlaidAccount,
+            itemId: propsWithSortedExternalAccounts.plaidItemId,
+            institution: propsWithSortedExternalAccounts.plaidInstitution,
+            upgradingId,
             offBudget,
             type: accountType,
             startingDate,
@@ -266,11 +296,7 @@ export function SelectLinkedAccountsModal({
               propsWithSortedExternalAccounts.externalAccounts[
                 externalAccountIndex
               ],
-            upgradingId:
-              chosenLocalAccountId !== addOnBudgetAccountOption.id &&
-              chosenLocalAccountId !== addOffBudgetAccountOption.id
-                ? chosenLocalAccountId
-                : undefined,
+            upgradingId,
             offBudget,
             type: accountType,
             startingDate,
@@ -291,7 +317,8 @@ export function SelectLinkedAccountsModal({
     externalAccount:
       | SyncServerGoCardlessAccount
       | SyncServerSimpleFinAccount
-      | SyncServerPluggyAiAccount,
+      | SyncServerPluggyAiAccount
+      | SyncServerPlaidAccount,
     localAccountId: string | null | undefined,
   ) {
     setChosenAccounts(accounts => {
@@ -317,11 +344,8 @@ export function SelectLinkedAccountsModal({
     const chosenId = chosenAccounts[accountId];
     if (!chosenId) return undefined;
 
-    if (chosenId === addOnBudgetAccountOption.id) {
-      return addOnBudgetAccountOption;
-    }
-    if (chosenId === addOffBudgetAccountOption.id) {
-      return addOffBudgetAccountOption;
+    if (chosenId === addNewAccountOption.id) {
+      return addNewAccountOption;
     }
 
     return localAccounts.find(acc => acc.id === chosenId);
@@ -354,10 +378,7 @@ export function SelectLinkedAccountsModal({
     }));
   };
 
-  const setAccountType = (
-    accountId: string,
-    type: AccountType | undefined,
-  ) => {
+  const setAccountType = (accountId: string, type: AccountType | undefined) => {
     setAccountTypes(prev => ({ ...prev, [accountId]: type }));
   };
 
@@ -463,8 +484,7 @@ export function SelectLinkedAccountsModal({
                   // Only show starting options for new accounts being created
                   const shouldShowStartingOptions = isNewAccountOption(
                     chosenAccount?.id,
-                    addOnBudgetAccountOption.id,
-                    addOffBudgetAccountOption.id,
+                    addNewAccountOption.id,
                   );
 
                   return (
@@ -527,7 +547,8 @@ export function SelectLinkedAccountsModal({
 type ExternalAccount =
   | SyncServerGoCardlessAccount
   | SyncServerSimpleFinAccount
-  | SyncServerPluggyAiAccount;
+  | SyncServerPluggyAiAccount
+  | SyncServerPlaidAccount;
 
 type StartingBalanceInfo = {
   date: string;
@@ -562,18 +583,13 @@ type SharedAccountRowProps = {
 function getAvailableAccountOptions(
   unlinkedAccounts: AccountEntity[],
   chosenAccount: { id: string; name: string } | undefined,
-  addOnBudgetAccountOption: { id: string; name: string },
-  addOffBudgetAccountOption: { id: string; name: string },
+  addNewAccountOption: { id: string; name: string },
 ): AutocompleteItem[] {
   const options: AutocompleteItem[] = [...unlinkedAccounts];
-  if (
-    chosenAccount &&
-    chosenAccount.id !== addOnBudgetAccountOption.id &&
-    chosenAccount.id !== addOffBudgetAccountOption.id
-  ) {
+  if (chosenAccount && chosenAccount.id !== addNewAccountOption.id) {
     options.push(chosenAccount);
   }
-  options.push(addOnBudgetAccountOption, addOffBudgetAccountOption);
+  options.push(addNewAccountOption);
   return options;
 }
 
@@ -637,8 +653,7 @@ function TableRow({
   showStartingOptions,
 }: TableRowProps) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { addOnBudgetAccountOption, addOffBudgetAccountOption } =
-    useAddBudgetAccountOptions();
+  const { addNewAccountOption } = useAddNewAccountOption();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const { t } = useTranslation();
@@ -649,8 +664,7 @@ function TableRow({
   const availableAccountOptions = getAvailableAccountOptions(
     unlinkedAccounts,
     chosenAccount,
-    addOnBudgetAccountOption,
-    addOffBudgetAccountOption,
+    addNewAccountOption,
   );
 
   return (
@@ -740,7 +754,9 @@ function TableRow({
               color: theme.pageText,
             }}
           >
-            <option value="">Default</option>
+            <option value="">
+              <Trans>Default</Trans>
+            </option>
             {ACCOUNT_TYPE_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -821,12 +837,18 @@ function getInstitutionName(
   externalAccount:
     | SyncServerGoCardlessAccount
     | SyncServerSimpleFinAccount
-    | SyncServerPluggyAiAccount,
+    | SyncServerPluggyAiAccount
+    | SyncServerPlaidAccount,
 ) {
-  if (typeof externalAccount?.institution === 'string') {
-    return externalAccount?.institution ?? '';
-  } else if (typeof externalAccount.institution?.name === 'string') {
-    return externalAccount?.institution?.name ?? '';
+  const maybeInstitution = (externalAccount as { institution?: unknown })
+    .institution;
+  if (typeof maybeInstitution === 'string') {
+    return maybeInstitution ?? '';
+  } else if (
+    maybeInstitution &&
+    typeof (maybeInstitution as { name?: unknown }).name === 'string'
+  ) {
+    return (maybeInstitution as { name: string }).name ?? '';
   }
   return '';
 }
@@ -956,8 +978,7 @@ function AccountCard({
   onSetCustomStartingDate,
 }: AccountCardProps) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { addOnBudgetAccountOption, addOffBudgetAccountOption } =
-    useAddBudgetAccountOptions();
+  const { addNewAccountOption } = useAddNewAccountOption();
   const format = useFormat();
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const { t } = useTranslation();
@@ -965,15 +986,13 @@ function AccountCard({
   const availableAccountOptions = getAvailableAccountOptions(
     unlinkedAccounts,
     chosenAccount,
-    addOnBudgetAccountOption,
-    addOffBudgetAccountOption,
+    addNewAccountOption,
   );
 
   // Only show starting date options for new accounts being created
   const shouldShowStartingOptions = isNewAccountOption(
     chosenAccount?.id,
-    addOnBudgetAccountOption.id,
-    addOffBudgetAccountOption.id,
+    addNewAccountOption.id,
   );
   const startingBalanceInfo = useStartingBalanceInfo(
     shouldShowStartingOptions ? undefined : chosenAccount?.id,
@@ -1119,7 +1138,13 @@ function AccountCard({
       {shouldShowStartingOptions && (
         <>
           <View>
-            <Text style={{ marginBottom: 4, fontSize: 13, color: theme.pageTextSubdued }}>
+            <Text
+              style={{
+                marginBottom: 4,
+                fontSize: 13,
+                color: theme.pageTextSubdued,
+              }}
+            >
               <Trans>Account type:</Trans>
             </Text>
             <select

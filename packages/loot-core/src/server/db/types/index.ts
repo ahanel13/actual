@@ -21,7 +21,7 @@ export type DbAccount = {
   type?: import('#types/models').AccountType | null;
   subtype?: string | null;
   bank?: string | null;
-  account_sync_source?: 'simpleFin' | 'goCardless' | null;
+  account_sync_source?: 'simpleFin' | 'goCardless' | 'pluggyai' | 'plaid' | null;
   last_reconciled?: string | null;
   last_sync?: string | null;
 };

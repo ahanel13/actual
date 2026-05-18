@@ -6,6 +6,7 @@ import type {
   AccountEntity,
   CategoryEntity,
   SyncServerGoCardlessAccount,
+  SyncServerPlaidAccount,
   SyncServerPluggyAiAccount,
   SyncServerSimpleFinAccount,
   TransactionEntity,
@@ -20,6 +21,8 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries } from '#payees';
 import { useDispatch, useStore } from '#redux';
 import type { AppDispatch } from '#redux/store';
+
+import { plaidQueries } from './plaidQueries';
 import { setNewTransactions } from '#transactions/transactionsSlice';
 
 import {
@@ -506,6 +509,57 @@ export function useLinkAccountPluggyAiMutation() {
         dispatch,
         t(
           'There was an error linking the account to PluggyAI. Please try again.',
+        ),
+        error,
+      );
+    },
+  });
+}
+
+type LinkAccountPlaidPayload = LinkAccountBasePayload & {
+  externalAccount: SyncServerPlaidAccount;
+  itemId: string;
+  institution: { institution_id: string | null; name: string | null };
+};
+
+export function useLinkAccountPlaidMutation() {
+  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      externalAccount,
+      itemId,
+      institution,
+      upgradingId,
+      offBudget,
+      type,
+      startingDate,
+      startingBalance,
+    }: LinkAccountPlaidPayload) => {
+      await send('plaid-accounts-link', {
+        externalAccount,
+        itemId,
+        institution,
+        upgradingId,
+        offBudget,
+        type,
+        startingDate,
+        startingBalance,
+      });
+    },
+    onSuccess: () => {
+      invalidateQueries(queryClient);
+      invalidateQueries(queryClient, payeeQueries.lists());
+      invalidateQueries(queryClient, plaidQueries.items());
+    },
+    onError: error => {
+      console.error('Error linking account to Plaid:', error);
+      dispatchErrorNotification(
+        dispatch,
+        t(
+          'There was an error linking the account to Plaid. Please try again.',
         ),
         error,
       );

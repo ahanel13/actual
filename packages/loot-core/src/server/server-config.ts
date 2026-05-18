@@ -8,6 +8,7 @@ type ServerConfig = {
   GOCARDLESS_SERVER: string;
   SIMPLEFIN_SERVER: string;
   PLUGGYAI_SERVER: string;
+  PLAID_SERVER: string;
   YAHOO_SERVER: string;
 };
 
@@ -46,6 +47,7 @@ export function getServer(url?: string): ServerConfig | null {
         GOCARDLESS_SERVER: joinURL(url, '/gocardless'),
         SIMPLEFIN_SERVER: joinURL(url, '/simplefin'),
         PLUGGYAI_SERVER: joinURL(url, '/pluggyai'),
+        PLAID_SERVER: joinURL(url, '/plaid'),
         YAHOO_SERVER: joinURL(url, '/yahoo'),
       };
     } catch (error) {

@@ -19,6 +19,7 @@ import { get, post } from '#server/post';
 import { getServer } from '#server/server-config';
 import { batchMessages } from '#server/sync';
 import { undoable, withUndo } from '#server/undo';
+import { getOffBudgetForType } from '#shared/accounts';
 import { isNonProductionEnvironment } from '#shared/environment';
 import { dayFromDate } from '#shared/months';
 import * as monthUtils from '#shared/months';
@@ -30,6 +31,7 @@ import type {
   GoCardlessToken,
   ImportTransactionEntity,
   SyncServerGoCardlessAccount,
+  SyncServerPlaidAccount,
   SyncServerPluggyAiAccount,
   SyncServerSimpleFinAccount,
   TransactionEntity,
@@ -56,6 +58,15 @@ export type AccountHandlers = {
   'gocardless-accounts-link': typeof linkGoCardlessAccount;
   'simplefin-accounts-link': typeof linkSimpleFinAccount;
   'pluggyai-accounts-link': typeof linkPluggyAiAccount;
+  'plaid-accounts-link': typeof linkPlaidAccount;
+  'plaid-status': typeof plaidStatus;
+  'plaid-set-credentials': typeof plaidSetCredentials;
+  'plaid-create-link-token': typeof plaidCreateLinkToken;
+  'plaid-exchange-public-token': typeof plaidExchangePublicToken;
+  'plaid-mark-item-reauthed': typeof plaidMarkItemReauthed;
+  'plaid-get-items': typeof plaidGetItems;
+  'plaid-sync-all': typeof plaidSyncAll;
+  'plaid-reset': typeof plaidReset;
   'account-create': typeof createAccount;
   'account-close': typeof closeAccount;
   'account-reopen': typeof reopenAccount;
@@ -81,13 +92,23 @@ async function updateAccount({
   id,
   name,
   type,
+  offbudget,
   last_reconciled,
 }: Pick<AccountEntity, 'id' | 'name'> &
-  Partial<Pick<AccountEntity, 'type' | 'last_reconciled'>>) {
+  Partial<Pick<AccountEntity, 'type' | 'offbudget' | 'last_reconciled'>>) {
+  const resolvedOffbudget =
+    offbudget !== undefined
+      ? offbudget
+        ? 1
+        : 0
+      : type !== undefined
+        ? getOffBudgetForType(type)
+        : undefined;
   await db.update('accounts', {
     id,
     name,
     ...(type !== undefined && { type: type ?? null }),
+    ...(resolvedOffbudget !== undefined && { offbudget: resolvedOffbudget }),
     ...(last_reconciled && { last_reconciled }),
   });
   return {};
@@ -374,11 +395,258 @@ async function linkPluggyAiAccount({
   return 'ok';
 }
 
+async function plaidStatus() {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/status',
+    {},
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidSetCredentials({
+  clientId,
+  secret,
+}: {
+  clientId: string;
+  secret: string;
+}) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/set-credentials',
+    { clientId, secret },
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidCreateLinkToken({ itemId }: { itemId?: string } = {}) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/create-link-token',
+    itemId ? { item_id: itemId } : {},
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidMarkItemReauthed({ itemId }: { itemId: string }) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/mark-item-reauthed',
+    { item_id: itemId },
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidGetItems() {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/get-items',
+    {},
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidReset() {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/reset',
+    {},
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function plaidSyncAll() {
+  // First nudge the sync-server to pull anything new from Plaid into its
+  // queue (idempotent if the scheduled job ran recently).
+  const userToken = await asyncStorage.getItem('user-token');
+  const serverConfig = getServer();
+  if (userToken && serverConfig) {
+    try {
+      await post(
+        serverConfig.PLAID_SERVER + '/sync-now',
+        {},
+        { 'X-ACTUAL-TOKEN': userToken },
+      );
+    } catch {
+      // best-effort; per-account sync below will retry as needed
+    }
+  }
+
+  // Triggers the same bank-sync path as the regular sync button but for every
+  // Plaid-linked account in one shot.
+  const dbAccounts = await db.getAccounts();
+  const plaidAccounts = dbAccounts.filter(
+    a => a.account_sync_source === 'plaid' && !a.closed && !a.tombstone,
+  );
+  const results: Array<{ id: string; ok: boolean; error?: unknown }> = [];
+  for (const acct of plaidAccounts) {
+    try {
+      // bank.bank_id holds the Plaid item_id; look it up from accounts.bank
+      const bank = acct.bank
+        ? await db.first<db.DbBank>('SELECT * FROM banks WHERE id = ?', [
+            acct.bank,
+          ])
+        : null;
+      const syncRes = await bankSync.syncAccount(
+        undefined,
+        undefined,
+        acct.id,
+        acct.account_id ?? '',
+        bank?.bank_id ?? '',
+      );
+      await handleSyncResponse(syncRes, acct.id);
+      results.push({ id: acct.id, ok: true });
+    } catch (err) {
+      results.push({ id: acct.id, ok: false, error: String(err) });
+    }
+  }
+  connection.send('sync-event', { type: 'success', tables: ['transactions'] });
+  return { results };
+}
+
+async function plaidExchangePublicToken({
+  publicToken,
+}: {
+  publicToken: string;
+}) {
+  const userToken = await asyncStorage.getItem('user-token');
+  if (!userToken) {
+    return { error: 'unauthorized' };
+  }
+  const serverConfig = getServer();
+  if (!serverConfig) {
+    throw new Error('Failed to get server config.');
+  }
+  return post(
+    serverConfig.PLAID_SERVER + '/exchange-public-token',
+    { publicToken },
+    { 'X-ACTUAL-TOKEN': userToken },
+  );
+}
+
+async function linkPlaidAccount({
+  externalAccount,
+  itemId,
+  institution,
+  upgradingId,
+  offBudget = false,
+  type,
+  startingDate,
+  startingBalance,
+}: LinkAccountBaseParams & {
+  externalAccount: SyncServerPlaidAccount;
+  itemId: string;
+  institution: { institution_id: string | null; name: string | null };
+}) {
+  let id;
+
+  const bank = await link.findOrCreateBank(
+    { name: institution?.name ?? t('Unknown') },
+    itemId,
+  );
+
+  if (upgradingId) {
+    const accRow = await db.first<db.DbAccount>(
+      'SELECT * FROM accounts WHERE id = ?',
+      [upgradingId],
+    );
+
+    if (!accRow) {
+      throw new Error(`Account with ID ${upgradingId} not found.`);
+    }
+
+    id = accRow.id;
+    await db.update('accounts', {
+      id,
+      account_id: externalAccount.account_id,
+      bank: bank.id,
+      account_sync_source: 'plaid',
+    });
+  } else {
+    id = uuidv4();
+    await db.insertWithUUID('accounts', {
+      id,
+      account_id: externalAccount.account_id,
+      name: externalAccount.name,
+      official_name: externalAccount.official_name ?? externalAccount.name,
+      bank: bank.id,
+      offbudget: offBudget ? 1 : 0,
+      type: type ?? null,
+      account_sync_source: 'plaid',
+    });
+    await db.insertPayee({
+      name: '',
+      transfer_acct: id,
+    });
+  }
+
+  const syncRes = await bankSync.syncAccount(
+    undefined,
+    undefined,
+    id,
+    externalAccount.account_id,
+    bank.bank_id,
+    startingDate,
+    startingBalance,
+  );
+
+  await handleSyncResponse(syncRes, id);
+
+  connection.send('sync-event', {
+    type: 'success',
+    tables: ['transactions'],
+  });
+
+  return 'ok';
+}
+
 async function createAccount({
   name,
   type,
   balance = 0,
-  offBudget = false,
+  offBudget,
   closed = false,
 }: {
   name: string;
@@ -387,10 +655,12 @@ async function createAccount({
   offBudget?: boolean | undefined;
   closed?: boolean | undefined;
 }) {
+  const resolvedOffBudget =
+    offBudget !== undefined ? (offBudget ? 1 : 0) : getOffBudgetForType(type);
   const id: AccountEntity['id'] = await db.insertAccount({
     name,
     type: type ?? null,
-    offbudget: offBudget ? 1 : 0,
+    offbudget: resolvedOffBudget,
     closed: closed ? 1 : 0,
   });
 
@@ -405,7 +675,7 @@ async function createAccount({
     await db.insertTransaction({
       account: id,
       amount: amountToInteger(balance),
-      category: offBudget ? null : payee.category,
+      category: resolvedOffBudget ? null : payee.category,
       payee: payee.id,
       date: monthUtils.currentDay(),
       cleared: true,
@@ -1224,7 +1494,9 @@ async function unlinkAccount({ id }: { id: AccountEntity['id'] }) {
     return 'ok';
   }
 
-  const isGoCardless = accRow.account_sync_source === 'goCardless';
+  const syncSource = accRow.account_sync_source;
+  const isGoCardless = syncSource === 'goCardless';
+  const isPlaid = syncSource === 'plaid';
 
   await db.updateAccount({
     id,
@@ -1236,7 +1508,7 @@ async function unlinkAccount({ id }: { id: AccountEntity['id'] }) {
     account_sync_source: null,
   });
 
-  if (isGoCardless === false) {
+  if (!isGoCardless && !isPlaid) {
     return;
   }
 
@@ -1245,8 +1517,8 @@ async function unlinkAccount({ id }: { id: AccountEntity['id'] }) {
     [bankId],
   );
 
-  // No more accounts are associated with this bank. We can remove
-  // it from GoCardless.
+  // No more accounts are associated with this bank. We can release the
+  // upstream provider Item.
   const userToken = await asyncStorage.getItem('user-token');
   if (!userToken) {
     return 'ok';
@@ -1267,18 +1539,20 @@ async function unlinkAccount({ id }: { id: AccountEntity['id'] }) {
       throw new Error('Failed to get server config.');
     }
 
-    const requisitionId = bank.bank_id;
-
     try {
-      await post(
-        serverConfig.GOCARDLESS_SERVER + '/remove-account',
-        {
-          requisitionId,
-        },
-        {
-          'X-ACTUAL-TOKEN': userToken,
-        },
-      );
+      if (isGoCardless) {
+        await post(
+          serverConfig.GOCARDLESS_SERVER + '/remove-account',
+          { requisitionId: bank.bank_id },
+          { 'X-ACTUAL-TOKEN': userToken },
+        );
+      } else if (isPlaid) {
+        await post(
+          serverConfig.PLAID_SERVER + '/remove-account',
+          { item_id: bank.bank_id },
+          { 'X-ACTUAL-TOKEN': userToken },
+        );
+      }
     } catch (error) {
       logger.log({ error });
     }
@@ -1296,6 +1570,15 @@ app.method('account-properties', getAccountProperties);
 app.method('gocardless-accounts-link', linkGoCardlessAccount);
 app.method('simplefin-accounts-link', linkSimpleFinAccount);
 app.method('pluggyai-accounts-link', linkPluggyAiAccount);
+app.method('plaid-accounts-link', linkPlaidAccount);
+app.method('plaid-status', plaidStatus);
+app.method('plaid-set-credentials', plaidSetCredentials);
+app.method('plaid-create-link-token', plaidCreateLinkToken);
+app.method('plaid-exchange-public-token', plaidExchangePublicToken);
+app.method('plaid-mark-item-reauthed', plaidMarkItemReauthed);
+app.method('plaid-get-items', plaidGetItems);
+app.method('plaid-sync-all', plaidSyncAll);
+app.method('plaid-reset', plaidReset);
 app.method('account-create', mutator(undoable(createAccount)));
 app.method('account-close', mutator(closeAccount));
 app.method('account-reopen', mutator(undoable(reopenAccount)));

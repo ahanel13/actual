@@ -12,6 +12,8 @@ import * as adminApp from './app-admin';
 import * as corsApp from './app-cors-proxy';
 import * as goCardlessApp from './app-gocardless/app-gocardless';
 import * as openidApp from './app-openid';
+import * as plaidApp from './app-plaid/app-plaid';
+import { startScheduledSync as startPlaidScheduledSync } from './app-plaid/plaid-scheduled-sync.js';
 import * as pluggai from './app-pluggyai/app-pluggyai';
 import * as secretApp from './app-secrets';
 import * as simpleFinApp from './app-simplefin/app-simplefin';
@@ -60,6 +62,7 @@ app.use('/account', accountApp.handlers);
 app.use('/gocardless', goCardlessApp.handlers);
 app.use('/simplefin', simpleFinApp.handlers);
 app.use('/pluggyai', pluggai.handlers);
+app.use('/plaid', plaidApp.handlers);
 app.use('/yahoo', yahooApp.handlers);
 app.use('/secret', secretApp.handlers);
 
@@ -128,11 +131,14 @@ app.get('/metrics', (_req, res) => {
 
 // The web frontend
 app.use((req, res, next) => {
-  res.set('Cross-Origin-Opener-Policy', 'same-origin');
-  res.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  // COOP/COEP intentionally not set. Plaid Link's iframe (cdn.plaid.com) does
+  // not opt into cross-origin isolation, so enabling COEP would block it.
+  // Trade-off: SharedArrayBuffer is unavailable; absurd-sql uses its non-SAB
+  // fallback (browser-preload.js auto-enables the override so users never see
+  // the FatalError screen).
   res.set(
     'Content-Security-Policy',
-    "default-src 'self' blob:; img-src 'self' blob: data:; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src http: https:;",
+    "default-src 'self' blob:; img-src 'self' blob: data: https://cdn.plaid.com; script-src 'self' 'unsafe-eval' blob: https://cdn.plaid.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src http: https:; frame-src 'self' https://cdn.plaid.com;",
   );
   next();
 });
@@ -208,10 +214,12 @@ export async function run() {
     };
     https.createServer(httpsOptions, app).listen(port, hostname, () => {
       sendServerStartedMessage();
+      startPlaidScheduledSync();
     });
   } else {
     app.listen(port, hostname, () => {
       sendServerStartedMessage();
+      startPlaidScheduledSync();
     });
   }
 }

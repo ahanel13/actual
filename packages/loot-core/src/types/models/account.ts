@@ -40,4 +40,23 @@ export type AccountEntity = {
   last_sync: string | null;
 };
 
-export type AccountSyncSource = 'simpleFin' | 'goCardless' | 'pluggyai';
+export type AccountSyncSource =
+  | 'simpleFin'
+  | 'goCardless'
+  | 'pluggyai'
+  | 'plaid';
+
+export type SyncServerPlaidAccount = {
+  account_id: string;
+  name: string;
+  official_name: string | null;
+  mask: string | null;
+  type: string;
+  subtype: string | null;
+  balance: number | null;
+  balance_current: number | null;
+  balance_available: number | null;
+  balance_limit: number | null;
+  iso_currency_code: string | null;
+  institution?: { name: string | null } | null;
+};
