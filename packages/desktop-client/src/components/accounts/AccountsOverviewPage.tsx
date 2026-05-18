@@ -93,8 +93,6 @@ function NetWorthBalance({ style }: { style?: React.CSSProperties }) {
 
 // ─── Types & grouping ─────────────────────────────────────────────────────────
 
-type BudgetFilter = 'all' | 'on-budget' | 'off-budget';
-
 type AccountGroup = {
   label: string;
   isLiability: boolean;
@@ -163,79 +161,15 @@ const GROUP_DEFS: GroupDef[] = [
   },
 ];
 
-function buildGroups(
-  accounts: AccountEntity[],
-  filter: BudgetFilter,
-): AccountGroup[] {
+function buildGroups(accounts: AccountEntity[]): AccountGroup[] {
   const active = accounts.filter(a => !a.closed && !a.tombstone);
-
-  const filtered = active.filter(a => {
-    if (filter === 'on-budget') return !a.offbudget;
-    if (filter === 'off-budget') return !!a.offbudget;
-    return true;
-  });
 
   return GROUP_DEFS.map(def => ({
     label: def.label,
     isLiability: def.isLiability,
     color: def.color,
-    accounts: filtered.filter(def.match),
+    accounts: active.filter(def.match),
   })).filter(g => g.accounts.length > 0);
-}
-
-// ─── Filter tabs ──────────────────────────────────────────────────────────────
-
-function FilterTabs({
-  value,
-  onChange,
-  inline = false,
-}: {
-  value: BudgetFilter;
-  onChange: (v: BudgetFilter) => void;
-  inline?: boolean;
-}) {
-  const { t } = useTranslation();
-  const tabs: Array<{ value: BudgetFilter; label: string }> = [
-    { value: 'all', label: t('All accounts') },
-    { value: 'on-budget', label: t('On budget') },
-    { value: 'off-budget', label: t('Off budget') },
-  ];
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        gap: 4,
-        backgroundColor: theme.tableBackground,
-        borderRadius: 8,
-        padding: 4,
-        alignSelf: 'flex-start',
-        marginBottom: inline ? 0 : 20,
-      }}
-    >
-      {tabs.map(tab => (
-        <button
-          key={tab.value}
-          onClick={() => onChange(tab.value)}
-          style={{
-            padding: '6px 14px',
-            borderRadius: 6,
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 600,
-            backgroundColor:
-              value === tab.value ? theme.cardBackground : 'transparent',
-            color: value === tab.value ? theme.pageText : theme.pageTextSubdued,
-            boxShadow:
-              value === tab.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-          }}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </View>
-  );
 }
 
 // ─── Account row ──────────────────────────────────────────────────────────────
@@ -595,12 +529,10 @@ function SummarySection({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export function AccountsOverviewPage() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { data: accounts = [] } = useAccounts();
-  const [budgetFilter, setBudgetFilter] = useState<BudgetFilter>('all');
 
-  const groups = buildGroups(accounts, budgetFilter);
+  const groups = buildGroups(accounts);
 
   const onAddAccount = () => {
     dispatch(pushModal({ modal: { name: 'add-account', options: {} } }));
@@ -631,16 +563,13 @@ export function AccountsOverviewPage() {
         <Trans>Accounts</Trans>
       </View>
 
-      {/* Filter tabs + Add account button on same row */}
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           marginBottom: 20,
         }}
       >
-        <FilterTabs value={budgetFilter} onChange={setBudgetFilter} inline />
         <Button
           variant="primary"
           onPress={onAddAccount}
