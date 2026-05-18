@@ -7,6 +7,17 @@ Actual-*
 **/xcuserdata/*
 export-2020-01-10.csv
 
+# Local planning / notes (Monarch parity work — not for upstream)
+/todo-checklist.md
+/plan-investments.md
+/plan-goals.md
+/plan-reports.md
+/plan-dashboard.md
+/plan-export-import.md
+/plan-couple-accounts.md
+/goals-plan.md
+/actual-budget-monarch-parity-roadmap.md
+
 # MacOS
 .DS_Store
 
