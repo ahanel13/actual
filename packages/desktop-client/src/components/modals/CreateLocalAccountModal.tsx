@@ -6,18 +6,6 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { FormError } from '@actual-app/components/form-error';
-import { InitialFocus } from '@actual-app/components/initial-focus';
-import { InlineField } from '@actual-app/components/inline-field';
-import { Input } from '@actual-app/components/input';
-import { theme } from '@actual-app/components/theme';
-import { View } from '@actual-app/components/view';
-import { toRelaxedNumber } from '@actual-app/core/shared/util';
-import type {
-  AccountType,
-  AccountAssetType,
-  AccountLiabilityType,
-} from '@actual-app/core/types/models';
-
 import {
   SvgArrowOutlineDown,
   SvgArrowOutlineUp,
@@ -29,6 +17,18 @@ import {
   SvgStarFull,
   SvgTravelCar,
 } from '@actual-app/components/icons/v1';
+import { InitialFocus } from '@actual-app/components/initial-focus';
+import { InlineField } from '@actual-app/components/inline-field';
+import { Input } from '@actual-app/components/input';
+import { theme } from '@actual-app/components/theme';
+import { View } from '@actual-app/components/view';
+import { getOffBudgetForType } from '@actual-app/core/shared/accounts';
+import { toRelaxedNumber } from '@actual-app/core/shared/util';
+import type {
+  AccountAssetType,
+  AccountLiabilityType,
+  AccountType,
+} from '@actual-app/core/types/models';
 
 import { useCreateAccountMutation } from '#accounts';
 import {
@@ -63,7 +63,11 @@ const LIABILITY_TYPES: AccountTypeOption[] = [
   { type: 'credit_card', label: 'Credit Card', Icon: SvgCreditCard },
   { type: 'mortgage', label: 'Mortgage', Icon: SvgHome },
   { type: 'loan', label: 'Loans', Icon: SvgDocument },
-  { type: 'other_liability', label: 'Other Liabilities', Icon: SvgArrowOutlineDown },
+  {
+    type: 'other_liability',
+    label: 'Other Liabilities',
+    Icon: SvgArrowOutlineDown,
+  },
 ];
 
 const LIABILITY_ACCOUNT_TYPES = new Set<AccountType>([
@@ -104,7 +108,9 @@ function TypeRow({ option, onSelect }: TypeRowProps) {
       onMouseEnter={e =>
         (e.currentTarget.style.backgroundColor = theme.tableRowBackgroundHover)
       }
-      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+      onMouseLeave={e =>
+        (e.currentTarget.style.backgroundColor = 'transparent')
+      }
     >
       <Icon style={{ width: 18, height: 18, color: theme.pageTextSubdued }} />
       <Trans>{label}</Trans>
@@ -176,12 +182,11 @@ export function CreateLocalAccountModal() {
     setBalanceError(balErr);
 
     if (!nameError && !balErr) {
-      const offBudget = selectedType !== 'cash';
       createAccount.mutate(
         {
           name,
           balance: toRelaxedNumber(balance),
-          offBudget,
+          offBudget: getOffBudgetForType(selectedType) === 1,
           type: selectedType,
         },
         {
@@ -200,10 +205,7 @@ export function CreateLocalAccountModal() {
         <>
           <ModalHeader
             title={
-              <ModalTitle
-                title={t('Create Local Account')}
-                shrinkOnOverflow
-              />
+              <ModalTitle title={t('Create Local Account')} shrinkOnOverflow />
             }
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
@@ -242,7 +244,9 @@ export function CreateLocalAccountModal() {
                   </InitialFocus>
                 </InlineField>
                 {nameError && (
-                  <FormError style={{ marginLeft: 75, color: theme.warningText }}>
+                  <FormError
+                    style={{ marginLeft: 75, color: theme.warningText }}
+                  >
                     {nameError}
                   </FormError>
                 )}

@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
+import { getOffBudgetForType } from '@actual-app/core/shared/accounts';
 import type { AccountType } from '@actual-app/core/types/models';
 
 import { useUpdateAccountMutation } from '#accounts';
@@ -48,18 +49,16 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
   const [selectedType, setSelectedType] = useState<AccountType | ''>(
     account?.type ?? '',
   );
-  const [selectedOffbudget, setSelectedOffbudget] = useState<0 | 1>(
-    account?.offbudget ? 1 : 0,
-  );
 
   if (!account) return null;
 
   const onSave = () => {
+    const resolvedType = selectedType === '' ? null : selectedType;
     updateAccount.mutate({
       account: {
         ...account,
-        type: selectedType === '' ? null : selectedType,
-        offbudget: selectedOffbudget,
+        type: resolvedType,
+        offbudget: getOffBudgetForType(resolvedType),
       },
     });
     dispatch(closeModal());
@@ -77,54 +76,6 @@ export function EditAccountTypeModal({ accountId }: EditAccountTypeModalProps) {
             <View style={{ fontSize: 14, color: theme.pageTextSubdued }}>
               <Trans>Account:</Trans>{' '}
               <strong style={{ color: theme.pageText }}>{account.name}</strong>
-            </View>
-
-            {/* On budget / Off budget toggle */}
-            <View style={{ gap: 8 }}>
-              <View
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: theme.pageTextSubdued,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                <Trans>Budget status</Trans>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {(
-                  [
-                    { value: 0 as const, label: 'On budget' },
-                    { value: 1 as const, label: 'Off budget' },
-                  ]
-                ).map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setSelectedOffbudget(opt.value)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      border: `2px solid ${
-                        selectedOffbudget === opt.value
-                          ? theme.buttonPrimaryBackground
-                          : theme.tableBorder
-                      }`,
-                      backgroundColor:
-                        selectedOffbudget === opt.value
-                          ? theme.buttonPrimaryBackground + '15'
-                          : 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      fontSize: 14,
-                      color: theme.pageText,
-                    }}
-                  >
-                    <Trans>{opt.label}</Trans>
-                  </button>
-                ))}
-              </View>
             </View>
 
             <View style={{ gap: 6 }}>
