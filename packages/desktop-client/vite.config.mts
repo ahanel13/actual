@@ -307,6 +307,13 @@ export default defineConfig(async ({ mode, command }) => {
   return {
     base: '/',
     envPrefix: 'REACT_APP_',
+    define: {
+      // Statically replace the backend worker hash so Rolldown inlines it.
+      // process.env assignment alone is not picked up by Rolldown's env loader.
+      'import.meta.env.REACT_APP_BACKEND_WORKER_HASH': JSON.stringify(
+        process.env.REACT_APP_BACKEND_WORKER_HASH ?? '',
+      ),
+    },
     build: {
       minify: false,
       target: 'es2022',
