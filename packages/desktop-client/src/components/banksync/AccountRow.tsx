@@ -1,7 +1,9 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Trans } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
+import { InitialFocus } from '@actual-app/components/initial-focus';
+import { Input } from '@actual-app/components/input';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
@@ -10,6 +12,7 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { format as formatDate } from 'date-fns';
 import type { Locale } from 'date-fns';
 
+import { useUpdateAccountMutation } from '#accounts/mutations';
 import { Cell, Row } from '#components/table';
 
 type AccountRowProps = {
@@ -23,6 +26,8 @@ type AccountRowProps = {
 export const AccountRow = memo(
   ({ account, hovered, onHover, onAction, locale }: AccountRowProps) => {
     const backgroundFocus = hovered;
+    const [isEditing, setIsEditing] = useState(false);
+    const { mutate: updateAccount } = useUpdateAccountMutation();
 
     const lastSyncString = tsToRelativeTime(account.last_sync, locale, {
       capitalize: true,
@@ -33,10 +38,12 @@ export const AccountRow = memo(
       { locale },
     );
 
-    const potentiallyTruncatedAccountName =
-      account.name.length > 30
-        ? account.name.slice(0, 30) + '...'
-        : account.name;
+    const commitRename = (newName: string) => {
+      if (newName.trim() && newName.trim() !== account.name) {
+        updateAccount({ account: { ...account, name: newName.trim() } });
+      }
+      setIsEditing(false);
+    };
 
     return (
       <Row
@@ -57,7 +64,26 @@ export const AccountRow = memo(
           plain
           style={{ color: theme.tableText, padding: '10px' }}
         >
-          {potentiallyTruncatedAccountName}
+          {isEditing ? (
+            <InitialFocus>
+              <Input
+                style={{ padding: '2px 4px', fontSize: 13, width: '100%' }}
+                defaultValue={account.name}
+                onEnter={value => commitRename(value)}
+                onBlur={e => commitRename(e.currentTarget.value)}
+                onEscape={() => setIsEditing(false)}
+              />
+            </InitialFocus>
+          ) : (
+            <Tooltip content="Click to rename" placement="bottom start">
+              <span
+                style={{ cursor: 'text' }}
+                onClick={() => setIsEditing(true)}
+              >
+                {account.name}
+              </span>
+            </Tooltip>
+          )}
         </Cell>
 
         <Cell
