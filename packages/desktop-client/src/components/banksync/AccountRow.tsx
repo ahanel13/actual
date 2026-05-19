@@ -13,6 +13,7 @@ import { format as formatDate } from 'date-fns';
 import type { Locale } from 'date-fns';
 
 import { useUpdateAccountMutation } from '#accounts/mutations';
+import { BankLogo } from '#components/common/BankLogo';
 import { Cell, Row } from '#components/table';
 
 type AccountRowProps = {
@@ -59,8 +60,18 @@ export const AccountRow = memo(
         onMouseLeave={() => onHover && onHover(null)}
       >
         <Cell
+          name="bankLogo"
+          width={44}
+          plain
+          style={{ padding: '8px 4px 8px 10px', display: 'flex', alignItems: 'center' }}
+        >
+          {account.account_sync_source && (
+            <BankLogo bankName={account.bankName} size={26} />
+          )}
+        </Cell>
+        <Cell
           name="accountName"
-          width={250}
+          width={220}
           plain
           style={{ color: theme.tableText, padding: '10px' }}
         >

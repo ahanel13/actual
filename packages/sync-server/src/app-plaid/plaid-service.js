@@ -37,7 +37,8 @@ function isLiabilitySubtype(subtype) {
 function normalizeAccount(a) {
   const balanceCurrent = a.balances?.current ?? null;
   const balanceAvailable = a.balances?.available ?? null;
-  const liability = isLiabilitySubtype(a.subtype) || a.type === 'credit' || a.type === 'loan';
+  const liability =
+    isLiabilitySubtype(a.subtype) || a.type === 'credit' || a.type === 'loan';
   const signed =
     liability && balanceCurrent != null ? -balanceCurrent : balanceCurrent;
   return {
@@ -119,13 +120,18 @@ export const plaidService = {
       const resp = await client.institutionsGetById({
         institution_id: institutionId,
         country_codes: [CountryCode.Us],
+        options: { include_optional_metadata: true },
       });
+      const inst = resp.data.institution;
       return {
         institution_id: institutionId,
-        name: resp.data.institution.name,
+        name: inst.name,
+        logo: inst.logo ?? null,
+        url: inst.url ?? null,
+        primary_color: inst.primary_color ?? null,
       };
     } catch {
-      return { institution_id: institutionId, name: null };
+      return { institution_id: institutionId, name: null, logo: null, url: null, primary_color: null };
     }
   },
 

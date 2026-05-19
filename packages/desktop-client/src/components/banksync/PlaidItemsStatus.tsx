@@ -8,6 +8,7 @@ import { View } from '@actual-app/components/view';
 import { send } from '@actual-app/core/platform/client/connection';
 import { formatDistanceToNow } from 'date-fns';
 
+import { BankLogo } from '#components/common/BankLogo';
 import { usePlaidItems } from '#hooks/usePlaidItems';
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
@@ -112,6 +113,11 @@ export function PlaidItemsStatus() {
               borderTop: `1px solid ${theme.tableBorder}`,
             }}
           >
+            <BankLogo
+              bankName={item.institution_name}
+              institutionLogo={item.institution_logo}
+              size={28}
+            />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ fontWeight: 500 }}>
                 {item.institution_name || item.item_id}

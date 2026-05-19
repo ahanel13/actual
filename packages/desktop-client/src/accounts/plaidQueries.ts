@@ -5,6 +5,8 @@ export type PlaidItem = {
   item_id: string;
   institution_id: string | null;
   institution_name: string | null;
+  institution_logo: string | null;
+  institution_url: string | null;
   cursor: string | null;
   last_synced_at: number | null;
   error_code: string | null;

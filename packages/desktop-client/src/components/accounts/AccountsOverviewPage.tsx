@@ -15,6 +15,7 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 
 import { useMoveAccountMutation } from '#accounts';
 import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
+import { BankLogo } from '#components/common/BankLogo';
 import { Link } from '#components/common/Link';
 import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import { useAccounts } from '#hooks/useAccounts';
@@ -222,6 +223,9 @@ function AccountRow({
             ':hover': { backgroundColor: theme.tableRowBackgroundHover },
           }}
         >
+          {account.account_sync_source && (
+            <BankLogo bankName={account.bankName} size={26} />
+          )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ fontWeight: 500, fontSize: 14 }}>
               {account.name}

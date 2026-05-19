@@ -12,11 +12,8 @@ import {
   validateSessionMiddleware,
 } from '#util/middlewares';
 
+import { runSyncForAllItems, runSyncForItem } from './plaid-scheduled-sync.js';
 import { plaidService } from './plaid-service.js';
-import {
-  runSyncForAllItems,
-  runSyncForItem,
-} from './plaid-scheduled-sync.js';
 
 const app = express();
 export { app as handlers };
@@ -101,6 +98,7 @@ function clearItemError(itemId) {
   }
 }
 
+
 app.post(
   '/status',
   handleError(async (req, res) => {
@@ -183,10 +181,28 @@ app.post(
   '/get-items',
   handleError(async (req, res) => {
     try {
-      const rows = getAccountDb().all(
-        `SELECT item_id, institution_id, institution_name, cursor, last_synced_at, error_code
+      const db = getAccountDb();
+      const rows = db.all(
+        `SELECT item_id, institution_id, institution_name, institution_logo,
+                institution_url, cursor, last_synced_at, error_code
          FROM plaid_items`,
       );
+
+      // Backfill logo for any existing rows that don't have one yet
+      for (const row of rows) {
+        if (!row.institution_logo && row.institution_id) {
+          const inst = await plaidService.getInstitution(row.institution_id);
+          if (inst?.logo) {
+            db.mutate(
+              `UPDATE plaid_items SET institution_logo = ?, institution_url = ? WHERE item_id = ?`,
+              [inst.logo, inst.url ?? null, row.item_id],
+            );
+            row.institution_logo = inst.logo;
+            row.institution_url = inst.url ?? null;
+          }
+        }
+      }
+
       res.send({
         status: 'ok',
         data: { items: rows },
@@ -219,13 +235,16 @@ app.post(
       const db = getAccountDb();
       db.mutate(
         `INSERT OR REPLACE INTO plaid_items
-           (item_id, access_token_encrypted, institution_id, institution_name, cursor, last_synced_at)
-         VALUES (?, ?, ?, ?, NULL, NULL)`,
+           (item_id, access_token_encrypted, institution_id, institution_name,
+            institution_logo, institution_url, cursor, last_synced_at)
+         VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)`,
         [
           item_id,
           encryptValue(access_token),
           institution?.institution_id ?? null,
           institution?.name ?? null,
+          institution?.logo ?? null,
+          institution?.url ?? null,
         ],
       );
 
@@ -416,7 +435,9 @@ app.post(
   handleError(async (req, res) => {
     try {
       const db = getAccountDb();
-      const rows = db.all(`SELECT item_id, access_token_encrypted FROM plaid_items`);
+      const rows = db.all(
+        `SELECT item_id, access_token_encrypted FROM plaid_items`,
+      );
       for (const row of rows) {
         try {
           const accessToken = decryptValue(row.access_token_encrypted);
