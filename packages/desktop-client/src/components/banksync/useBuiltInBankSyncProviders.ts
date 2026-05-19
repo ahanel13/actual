@@ -10,7 +10,6 @@ import type { SyncServerSimpleFinAccount } from '@actual-app/core/types/models/s
 import { useQueryClient } from '@tanstack/react-query';
 
 import { plaidQueries } from '#accounts/plaidQueries';
-
 import { useAuth } from '#auth/AuthProvider';
 import { Permissions } from '#auth/types';
 import { useMultiuserEnabled } from '#components/ServerContext';
@@ -260,7 +259,9 @@ export function useBuiltInBankSyncProviders({
         reason?: string;
       };
       if (result?.error || result?.status === 'error') {
-        throw new Error(result?.reason || result?.error || 'Plaid reset failed');
+        throw new Error(
+          result?.reason || result?.error || 'Plaid reset failed',
+        );
       }
       setIsPlaidSetupComplete(false);
       void queryClient.invalidateQueries({ queryKey: plaidQueries.items() });

@@ -53,3 +53,14 @@ export function useRefreshPricesMutation(accountId: string) {
     },
   });
 }
+
+export function useRefreshAllPricesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => send('prices-refresh-all', undefined),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['holdings'] });
+      void queryClient.invalidateQueries({ queryKey: ['balance-history'] });
+    },
+  });
+}

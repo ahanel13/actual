@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePlaidLink } from 'react-plaid-link';
 
 import { send } from '@actual-app/core/platform/client/connection';
 import type { SyncServerPlaidAccount } from '@actual-app/core/types/models';
-import { usePlaidLink } from 'react-plaid-link';
 
-import { addNotification } from '#notifications/notificationsSlice';
 import { closeModal, pushModal } from '#modals/modalsSlice';
 import type { Modal as ModalType } from '#modals/modalsSlice';
+import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
 
 type PlaidLinkModalProps = Extract<

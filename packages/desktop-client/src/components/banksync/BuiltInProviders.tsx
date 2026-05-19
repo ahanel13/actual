@@ -192,10 +192,7 @@ export function BuiltInProviders({
                   <Trans>Link bank account</Trans>
                 </ButtonWithLoading>
                 {provider.onSyncAll && provider.isConfigured && (
-                  <Button
-                    variant="bare"
-                    onPress={() => provider.onSyncAll?.()}
-                  >
+                  <Button variant="bare" onPress={() => provider.onSyncAll?.()}>
                     <Trans>Sync all</Trans>
                   </Button>
                 )}

@@ -159,14 +159,16 @@ export function SidebarGroup({
                     name: 'toggle-visibility',
                     text: group.hidden ? t('Show') : t('Hide'),
                   },
-                  !group.is_income && !group.is_savings && {
-                    name: 'mark-as-savings',
-                    text: t('Mark as Savings'),
-                  },
-                  !group.is_income && group.is_savings && {
-                    name: 'mark-as-expense',
-                    text: t('Mark as Expense'),
-                  },
+                  !group.is_income &&
+                    !group.is_savings && {
+                      name: 'mark-as-savings',
+                      text: t('Mark as Savings'),
+                    },
+                  !group.is_income &&
+                    group.is_savings && {
+                      name: 'mark-as-expense',
+                      text: t('Mark as Expense'),
+                    },
                   !group.is_ungrouped && {
                     name: 'remove-grouping',
                     text: t('Remove grouping'),

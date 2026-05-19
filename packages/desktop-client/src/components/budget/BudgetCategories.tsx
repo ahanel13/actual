@@ -51,12 +51,10 @@ function MaybeHideUnbudgeted({
   enabled: boolean;
   children: React.ReactNode;
 }) {
-  const budgeted = (useEnvelopeSheetValue(
-    envelopeBudget.catBudgeted(catId),
-  ) ?? 0) as number;
-  const spent = (useEnvelopeSheetValue(
-    envelopeBudget.catSumAmount(catId),
-  ) ?? 0) as number;
+  const budgeted = (useEnvelopeSheetValue(envelopeBudget.catBudgeted(catId)) ??
+    0) as number;
+  const spent = (useEnvelopeSheetValue(envelopeBudget.catSumAmount(catId)) ??
+    0) as number;
   if (enabled && hideUnbudgeted && budgeted === 0 && spent === 0) {
     return null;
   }
@@ -77,7 +75,11 @@ type BudgetItem =
   | { type: 'income-total'; value: CategoryGroupEntity }
   | { type: 'income-header' }
   | { type: 'savings-separator' }
-  | { type: 'savings-category'; value: CategoryEntity; group: CategoryGroupEntity }
+  | {
+      type: 'savings-category';
+      value: CategoryEntity;
+      group: CategoryGroupEntity;
+    }
   | { type: 'ungrouped-divider'; value: CategoryGroupEntity };
 
 type LocalDragState =
@@ -214,7 +216,8 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       string | null
     >(null);
     const items: BudgetItem[] = useMemo(() => {
-      const [expenseGroups, savingsGroups, incomeGroup] = separateGroups(categoryGroups);
+      const [expenseGroups, savingsGroups, incomeGroup] =
+        separateGroups(categoryGroups);
 
       // Build income items first (Monarch layout: income at top)
       let items: BudgetItem[] = [];
@@ -223,8 +226,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
         // Flat layout (Monarch parity): no per-group header for Income.
         items.push({ type: 'income-header' });
 
-        const incomeCollapsed =
-          collapsedGroupIds.includes(INCOME_SECTION_ID);
+        const incomeCollapsed = collapsedGroupIds.includes(INCOME_SECTION_ID);
 
         if (!incomeCollapsed) {
           if (newCategoryForGroup === incomeGroup.id) {
@@ -270,7 +272,8 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
             groupItems.push({ type: 'new-category' });
           }
 
-          const showCategories = group.is_ungrouped || !collapsedGroupIds.includes(group.id);
+          const showCategories =
+            group.is_ungrouped || !collapsedGroupIds.includes(group.id);
 
           return [
             ...groupItems,
@@ -294,8 +297,7 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       if (savingsGroups.length > 0) {
         items.push({ type: 'savings-separator' });
 
-        const savingsCollapsed =
-          collapsedGroupIds.includes(SAVINGS_SECTION_ID);
+        const savingsCollapsed = collapsedGroupIds.includes(SAVINGS_SECTION_ID);
 
         if (!savingsCollapsed) {
           const visibleSavingsGroups = savingsGroups.filter(
@@ -410,7 +412,10 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
     // savings-separator marker switches to savings. Both separators are
     // rendered AS the banner of the section they belong to (Expenses /
     // Savings & Investments), so they push into the new section.
-    const sectionedItems: Record<'income' | 'expense' | 'savings', BudgetItem[]> = {
+    const sectionedItems: Record<
+      'income' | 'expense' | 'savings',
+      BudgetItem[]
+    > = {
       income: [],
       expense: [],
       savings: [],
@@ -424,334 +429,329 @@ export const BudgetCategories = memo<BudgetCategoriesProps>(
       }
     }
 
-    const renderItem = (sectionItems: BudgetItem[]) => (item: BudgetItem, idx: number) => {
-          let content;
-          switch (item.type) {
-            case 'new-group':
-              content = (
-                <Row
-                  style={{ backgroundColor: theme.budgetHeaderCurrentMonth }}
-                >
-                  <SidebarGroup
-                    group={{ id: 'new', name: '' }}
-                    collapsed={false}
-                    editing
-                    onSave={_onSaveGroup}
-                    onHideNewGroup={onHideNewGroup}
-                    onEdit={onEditName}
-                  />
-                </Row>
-              );
-              break;
-            case 'new-category':
-              content = (
-                <Row>
-                  <SidebarCategory
-                    innerRef={null}
-                    category={{
-                      name: '',
-                      group: newCategoryForGroup!,
-                      is_income:
-                        newCategoryForGroup ===
-                        categoryGroups.find(g => g.is_income)?.id,
-                      id: 'new',
-                    }}
-                    editing
-                    onSave={_onSaveCategory}
-                    onHideNewCategory={onHideNewCategory}
-                    onEditName={onEditName!}
-                  />
-                </Row>
-              );
-              break;
+    const renderItem =
+      (sectionItems: BudgetItem[]) => (item: BudgetItem, idx: number) => {
+        let content;
+        switch (item.type) {
+          case 'new-group':
+            content = (
+              <Row style={{ backgroundColor: theme.budgetHeaderCurrentMonth }}>
+                <SidebarGroup
+                  group={{ id: 'new', name: '' }}
+                  collapsed={false}
+                  editing
+                  onSave={_onSaveGroup}
+                  onHideNewGroup={onHideNewGroup}
+                  onEdit={onEditName}
+                />
+              </Row>
+            );
+            break;
+          case 'new-category':
+            content = (
+              <Row>
+                <SidebarCategory
+                  innerRef={null}
+                  category={{
+                    name: '',
+                    group: newCategoryForGroup!,
+                    is_income:
+                      newCategoryForGroup ===
+                      categoryGroups.find(g => g.is_income)?.id,
+                    id: 'new',
+                  }}
+                  editing
+                  onSave={_onSaveCategory}
+                  onHideNewCategory={onHideNewCategory}
+                  onEditName={onEditName!}
+                />
+              </Row>
+            );
+            break;
 
-            case 'expense-group':
-              content = (
-                <ExpenseGroup
-                  group={item.value}
+          case 'expense-group':
+            content = (
+              <ExpenseGroup
+                group={item.value}
+                editingCell={editingCell}
+                collapsed={collapsedGroupIds.includes(item.value.id)}
+                dragState={dragState}
+                onEditName={onEditName}
+                onSave={_onSaveGroup}
+                onDelete={onDeleteGroup}
+                onDragChange={onDragChange}
+                onReorderGroup={onReorderGroup}
+                onReorderCategory={onReorderCategory}
+                onToggleCollapse={onToggleCollapse}
+                onShowNewCategory={onShowNewCategory}
+                onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
+              />
+            );
+            break;
+          case 'expense-category':
+            content = (
+              <MaybeHideUnbudgeted
+                catId={item.value.id}
+                hideUnbudgeted={!!hideUnbudgeted}
+                enabled={hideUnbudgetedEnabled}
+              >
+                <ExpenseCategory
+                  cat={item.value}
+                  categoryGroup={item.group}
                   editingCell={editingCell}
-                  collapsed={collapsedGroupIds.includes(item.value.id)}
                   dragState={dragState}
                   onEditName={onEditName}
-                  onSave={_onSaveGroup}
-                  onDelete={onDeleteGroup}
+                  onEditMonth={onEditMonth}
+                  onSave={_onSaveCategory}
+                  onDelete={onDeleteCategory}
                   onDragChange={onDragChange}
-                  onReorderGroup={onReorderGroup}
-                  onReorderCategory={onReorderCategory}
-                  onToggleCollapse={onToggleCollapse}
-                  onShowNewCategory={onShowNewCategory}
-                  onApplyBudgetTemplatesInGroup={onApplyBudgetTemplatesInGroup}
+                  onReorder={onReorderCategory}
+                  onBudgetAction={onBudgetAction}
+                  onShowActivity={onShowActivity}
                 />
-              );
-              break;
-            case 'expense-category':
-              content = (
-                <MaybeHideUnbudgeted
-                  catId={item.value.id}
-                  hideUnbudgeted={!!hideUnbudgeted}
-                  enabled={hideUnbudgetedEnabled}
-                >
-                  <ExpenseCategory
-                    cat={item.value}
-                    categoryGroup={item.group}
-                    editingCell={editingCell}
-                    dragState={dragState}
-                    onEditName={onEditName}
-                    onEditMonth={onEditMonth}
-                    onSave={_onSaveCategory}
-                    onDelete={onDeleteCategory}
-                    onDragChange={onDragChange}
-                    onReorder={onReorderCategory}
-                    onBudgetAction={onBudgetAction}
-                    onShowActivity={onShowActivity}
-                  />
-                </MaybeHideUnbudgeted>
-              );
-              break;
-            case 'income-header': {
-              const incomeCollapsed =
-                collapsedGroupIds.includes(INCOME_SECTION_ID);
-              content = (
-                <View
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onToggleCollapse(INCOME_SECTION_ID)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onToggleCollapse(INCOME_SECTION_ID);
-                    }
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    height: 44,
-                    paddingLeft: 10,
-                    paddingRight: 10,
-                    backgroundColor: theme.tableHeaderBackground,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <SvgExpandArrow
-                    width={8}
-                    height={8}
-                    style={{
-                      marginRight: 8,
-                      marginLeft: 4,
-                      flexShrink: 0,
-                      transition: 'transform .1s',
-                      transform: incomeCollapsed ? 'rotate(-90deg)' : '',
-                      color: theme.tableHeaderText,
-                    }}
-                  />
-                  <View
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      color: theme.tableHeaderText,
-                      textTransform: 'uppercase',
-                      flex: 1,
-                    }}
-                  >
-                    <Trans>Income</Trans>
-                  </View>
-                </View>
-              );
-              break;
-            }
-            case 'income-total':
-              content = <IncomeTotalRow group={item.value} />;
-              break;
-            case 'income-separator':
-              content = (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    height: 44,
-                    paddingLeft: 10,
-                    paddingRight: 10,
-                    backgroundColor: theme.tableHeaderBackground,
-                  }}
-                >
-                  <View
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      color: theme.tableHeaderText,
-                      textTransform: 'uppercase',
-                      flex: 1,
-                    }}
-                  >
-                    <Trans>Expenses</Trans>
-                  </View>
-                  <Button
-                    variant="bare"
-                    onPress={onShowNewGroup}
-                    style={{
-                      fontSize: 12,
-                      color: theme.pageTextLight,
-                      padding: '3px 8px',
-                    }}
-                  >
-                    + <Trans>Add group</Trans>
-                  </Button>
-                </View>
-              );
-              break;
-            case 'income-category':
-              content = (
-                <MaybeHideUnbudgeted
-                  catId={item.value.id}
-                  hideUnbudgeted={!!hideUnbudgeted}
-                  enabled={hideUnbudgetedEnabled}
-                >
-                  <IncomeCategory
-                    cat={item.value}
-                    editingCell={editingCell}
-                    isLast={idx === items.length - 1}
-                    onEditName={onEditName}
-                    onEditMonth={onEditMonth}
-                    onSave={_onSaveCategory}
-                    onDelete={onDeleteCategory}
-                    onDragChange={onDragChange}
-                    onReorder={onReorderCategory}
-                    onBudgetAction={onBudgetAction}
-                    onShowActivity={onShowActivity}
-                  />
-                </MaybeHideUnbudgeted>
-              );
-              break;
-            case 'ungrouped-divider':
-              content = (
-                <UngroupedDivider
-                  group={item.value}
-                  onSave={_onSaveGroup}
-                  onDelete={onDeleteGroup}
-                />
-              );
-              break;
-            case 'savings-separator': {
-              const savingsCollapsed =
-                collapsedGroupIds.includes(SAVINGS_SECTION_ID);
-              content = (
-                <View
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onToggleCollapse(SAVINGS_SECTION_ID)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onToggleCollapse(SAVINGS_SECTION_ID);
-                    }
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    height: 44,
-                    paddingLeft: 10,
-                    paddingRight: 10,
-                    backgroundColor: theme.tableHeaderBackground,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <SvgExpandArrow
-                    width={8}
-                    height={8}
-                    style={{
-                      marginRight: 8,
-                      marginLeft: 4,
-                      flexShrink: 0,
-                      transition: 'transform .1s',
-                      transform: savingsCollapsed ? 'rotate(-90deg)' : '',
-                      color: theme.tableHeaderText,
-                    }}
-                  />
-                  <View
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      color: theme.tableHeaderText,
-                      textTransform: 'uppercase',
-                      flex: 1,
-                    }}
-                  >
-                    <Trans>Savings &amp; Investments</Trans>
-                  </View>
-                </View>
-              );
-              break;
-            }
-            case 'savings-category':
-              content = (
-                <MaybeHideUnbudgeted
-                  catId={item.value.id}
-                  hideUnbudgeted={!!hideUnbudgeted}
-                  enabled={hideUnbudgetedEnabled}
-                >
-                  <ExpenseCategory
-                    cat={item.value}
-                    categoryGroup={item.group}
-                    editingCell={editingCell}
-                    dragState={dragState}
-                    onEditName={onEditName}
-                    onEditMonth={onEditMonth}
-                    onSave={_onSaveCategory}
-                    onDelete={onDeleteCategory}
-                    onDragChange={onDragChange}
-                    onReorder={onReorderCategory}
-                    onBudgetAction={onBudgetAction}
-                    onShowActivity={onShowActivity}
-                  />
-                </MaybeHideUnbudgeted>
-              );
-              break;
-            default:
-              // @ts-expect-error Error is expected here because "item.type" is "never"
-              throw new Error('Unknown item type: ' + item.type);
-          }
-
-          const pos =
-            idx === 0
-              ? 'first'
-              : idx === sectionItems.length - 1
-                ? 'last'
-                : null;
-
-          return (
-            <DropHighlightPosContext.Provider
-              key={
-                'value' in item
-                  ? item.value.id
-                  : item.type === 'income-header'
-                    ? 'income-header'
-                    : item.type === 'income-separator'
-                      ? 'income-separator'
-                      : item.type === 'savings-separator'
-                        ? 'savings-separator'
-                        : idx
-              }
-              value={pos}
-            >
+              </MaybeHideUnbudgeted>
+            );
+            break;
+          case 'income-header': {
+            const incomeCollapsed =
+              collapsedGroupIds.includes(INCOME_SECTION_ID);
+            content = (
               <View
-                style={
-                  dragState
-                    ? {}
-                    : {
-                        ':hover': { backgroundColor: theme.budgetCurrentMonth },
-                        ...(item.type === 'expense-group' &&
-                          idx !== 0 && { marginTop: 8 }),
-                      }
-                }
+                role="button"
+                tabIndex={0}
+                onClick={() => onToggleCollapse(INCOME_SECTION_ID)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onToggleCollapse(INCOME_SECTION_ID);
+                  }
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  height: 44,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  backgroundColor: theme.tableHeaderBackground,
+                  cursor: 'pointer',
+                }}
               >
-                {content}
+                <SvgExpandArrow
+                  width={8}
+                  height={8}
+                  style={{
+                    marginRight: 8,
+                    marginLeft: 4,
+                    flexShrink: 0,
+                    transition: 'transform .1s',
+                    transform: incomeCollapsed ? 'rotate(-90deg)' : '',
+                    color: theme.tableHeaderText,
+                  }}
+                />
+                <View
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: theme.tableHeaderText,
+                    textTransform: 'uppercase',
+                    flex: 1,
+                  }}
+                >
+                  <Trans>Income</Trans>
+                </View>
               </View>
-            </DropHighlightPosContext.Provider>
-          );
-        };
+            );
+            break;
+          }
+          case 'income-total':
+            content = <IncomeTotalRow group={item.value} />;
+            break;
+          case 'income-separator':
+            content = (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  height: 44,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  backgroundColor: theme.tableHeaderBackground,
+                }}
+              >
+                <View
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: theme.tableHeaderText,
+                    textTransform: 'uppercase',
+                    flex: 1,
+                  }}
+                >
+                  <Trans>Expenses</Trans>
+                </View>
+                <Button
+                  variant="bare"
+                  onPress={onShowNewGroup}
+                  style={{
+                    fontSize: 12,
+                    color: theme.pageTextLight,
+                    padding: '3px 8px',
+                  }}
+                >
+                  + <Trans>Add group</Trans>
+                </Button>
+              </View>
+            );
+            break;
+          case 'income-category':
+            content = (
+              <MaybeHideUnbudgeted
+                catId={item.value.id}
+                hideUnbudgeted={!!hideUnbudgeted}
+                enabled={hideUnbudgetedEnabled}
+              >
+                <IncomeCategory
+                  cat={item.value}
+                  editingCell={editingCell}
+                  isLast={idx === items.length - 1}
+                  onEditName={onEditName}
+                  onEditMonth={onEditMonth}
+                  onSave={_onSaveCategory}
+                  onDelete={onDeleteCategory}
+                  onDragChange={onDragChange}
+                  onReorder={onReorderCategory}
+                  onBudgetAction={onBudgetAction}
+                  onShowActivity={onShowActivity}
+                />
+              </MaybeHideUnbudgeted>
+            );
+            break;
+          case 'ungrouped-divider':
+            content = (
+              <UngroupedDivider
+                group={item.value}
+                onSave={_onSaveGroup}
+                onDelete={onDeleteGroup}
+              />
+            );
+            break;
+          case 'savings-separator': {
+            const savingsCollapsed =
+              collapsedGroupIds.includes(SAVINGS_SECTION_ID);
+            content = (
+              <View
+                role="button"
+                tabIndex={0}
+                onClick={() => onToggleCollapse(SAVINGS_SECTION_ID)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onToggleCollapse(SAVINGS_SECTION_ID);
+                  }
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  height: 44,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  backgroundColor: theme.tableHeaderBackground,
+                  cursor: 'pointer',
+                }}
+              >
+                <SvgExpandArrow
+                  width={8}
+                  height={8}
+                  style={{
+                    marginRight: 8,
+                    marginLeft: 4,
+                    flexShrink: 0,
+                    transition: 'transform .1s',
+                    transform: savingsCollapsed ? 'rotate(-90deg)' : '',
+                    color: theme.tableHeaderText,
+                  }}
+                />
+                <View
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: theme.tableHeaderText,
+                    textTransform: 'uppercase',
+                    flex: 1,
+                  }}
+                >
+                  <Trans>Savings &amp; Investments</Trans>
+                </View>
+              </View>
+            );
+            break;
+          }
+          case 'savings-category':
+            content = (
+              <MaybeHideUnbudgeted
+                catId={item.value.id}
+                hideUnbudgeted={!!hideUnbudgeted}
+                enabled={hideUnbudgetedEnabled}
+              >
+                <ExpenseCategory
+                  cat={item.value}
+                  categoryGroup={item.group}
+                  editingCell={editingCell}
+                  dragState={dragState}
+                  onEditName={onEditName}
+                  onEditMonth={onEditMonth}
+                  onSave={_onSaveCategory}
+                  onDelete={onDeleteCategory}
+                  onDragChange={onDragChange}
+                  onReorder={onReorderCategory}
+                  onBudgetAction={onBudgetAction}
+                  onShowActivity={onShowActivity}
+                />
+              </MaybeHideUnbudgeted>
+            );
+            break;
+          default:
+            // @ts-expect-error Error is expected here because "item.type" is "never"
+            throw new Error('Unknown item type: ' + item.type);
+        }
+
+        const pos =
+          idx === 0 ? 'first' : idx === sectionItems.length - 1 ? 'last' : null;
+
+        return (
+          <DropHighlightPosContext.Provider
+            key={
+              'value' in item
+                ? item.value.id
+                : item.type === 'income-header'
+                  ? 'income-header'
+                  : item.type === 'income-separator'
+                    ? 'income-separator'
+                    : item.type === 'savings-separator'
+                      ? 'savings-separator'
+                      : idx
+            }
+            value={pos}
+          >
+            <View
+              style={
+                dragState
+                  ? {}
+                  : {
+                      ':hover': { backgroundColor: theme.budgetCurrentMonth },
+                      ...(item.type === 'expense-group' &&
+                        idx !== 0 && { marginTop: 8 }),
+                    }
+              }
+            >
+              {content}
+            </View>
+          </DropHighlightPosContext.Provider>
+        );
+      };
 
     const cardStyle = {
       backgroundColor: theme.budgetCurrentMonth,

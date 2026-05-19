@@ -17,4 +17,5 @@ export type PriceCacheEntry = {
 
 export type HoldingWithPrice = HoldingEntity & {
   current_price: number | null;
+  price_fetched_at: string | null;
 };

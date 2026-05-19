@@ -91,62 +91,63 @@ function CategoryList({
   showBalances,
 }: CategoryListProps) {
   const { t } = useTranslation();
-  const { splitTransaction, createCategoryItem, groupedCategories } = useMemo(() => {
-    return items.reduce(
-      (acc, item, index) => {
-        if (item.id === 'split') {
-          acc.splitTransaction = { ...item, highlightedIndex: index };
+  const { splitTransaction, createCategoryItem, groupedCategories } =
+    useMemo(() => {
+      return items.reduce(
+        (acc, item, index) => {
+          if (item.id === 'split') {
+            acc.splitTransaction = { ...item, highlightedIndex: index };
+            return acc;
+          }
+          if (item.id === 'new') {
+            acc.createCategoryItem = { ...item, highlightedIndex: index };
+            return acc;
+          }
+
+          const groupId = item.group?.id || '';
+          const existing = acc.groupedCategories.find(
+            x => x.group?.id === groupId,
+          );
+          const itemWithIndex = {
+            ...item,
+            highlightedIndex: index,
+          };
+
+          if (!existing) {
+            acc.groupedCategories.push({
+              group: item.group ?? null,
+              categories: [itemWithIndex],
+            });
+          } else {
+            existing.categories.push(itemWithIndex);
+          }
+
           return acc;
-        }
-        if (item.id === 'new') {
-          acc.createCategoryItem = { ...item, highlightedIndex: index };
-          return acc;
-        }
-
-        const groupId = item.group?.id || '';
-        const existing = acc.groupedCategories.find(
-          x => x.group?.id === groupId,
-        );
-        const itemWithIndex = {
-          ...item,
-          highlightedIndex: index,
-        };
-
-        if (!existing) {
-          acc.groupedCategories.push({
-            group: item.group ?? null,
-            categories: [itemWithIndex],
-          });
-        } else {
-          existing.categories.push(itemWithIndex);
-        }
-
-        return acc;
-      },
-      {
-        splitTransaction: null,
-        createCategoryItem: null,
-        groupedCategories: [],
-      } as {
-        splitTransaction:
-          | (CategoryAutocompleteItem & {
-              highlightedIndex: number;
-            })
-          | null;
-        createCategoryItem:
-          | (CategoryAutocompleteItem & {
-              highlightedIndex: number;
-            })
-          | null;
-        groupedCategories: Array<{
-          group: CategoryGroupEntity | null;
-          categories: Array<
-            CategoryAutocompleteItem & { highlightedIndex: number }
-          >;
-        }>;
-      },
-    );
-  }, [items]);
+        },
+        {
+          splitTransaction: null,
+          createCategoryItem: null,
+          groupedCategories: [],
+        } as {
+          splitTransaction:
+            | (CategoryAutocompleteItem & {
+                highlightedIndex: number;
+              })
+            | null;
+          createCategoryItem:
+            | (CategoryAutocompleteItem & {
+                highlightedIndex: number;
+              })
+            | null;
+          groupedCategories: Array<{
+            group: CategoryGroupEntity | null;
+            categories: Array<
+              CategoryAutocompleteItem & { highlightedIndex: number }
+            >;
+          }>;
+        },
+      );
+    }, [items]);
 
   return (
     <View>
@@ -323,10 +324,7 @@ export function CategoryAutocomplete({
     // Offer "Create category" as a synthetic option only when the user has
     // typed something — keeps the option out of the default unfiltered list.
     if (allowCreate && hasCategoryInput) {
-      return [
-        { id: 'new', name: '' } as CategoryAutocompleteItem,
-        ...filtered,
-      ];
+      return [{ id: 'new', name: '' } as CategoryAutocompleteItem, ...filtered];
     }
     return filtered;
   }, [
@@ -375,12 +373,7 @@ export function CategoryAutocomplete({
         inputValue,
       );
     },
-    [
-      categoryGroups,
-      defaultCategoryGroups,
-      createCategoryMutation,
-      onSelect,
-    ],
+    [categoryGroups, defaultCategoryGroups, createCategoryMutation, onSelect],
   );
 
   const filterSuggestions = useCallback(

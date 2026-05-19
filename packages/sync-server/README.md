@@ -79,7 +79,6 @@ This fork adds a Plaid bank-sync provider. Plaid credentials and per-Item access
    **Back this key up.** Losing it makes every stored Plaid Item unrecoverable — you'd have to re-link from scratch.
 
 3. **Get Plaid production credentials**:
-
    - Sign up at https://dashboard.plaid.com
    - Complete the Plaid Production Agreement (required for real bank linking; sandbox/dev creds also work but are limited)
    - Grab your `PLAID_CLIENT_ID` and `PLAID_SECRET` from the dashboard

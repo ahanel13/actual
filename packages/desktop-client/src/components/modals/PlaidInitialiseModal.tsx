@@ -47,7 +47,9 @@ export const PlaidInitialiseModal = ({
 
     if (result?.status === 'error' || result?.error) {
       setIsValid(false);
-      setError(result?.reason || result?.error || t('Failed to save credentials.'));
+      setError(
+        result?.reason || result?.error || t('Failed to save credentials.'),
+      );
       setIsLoading(false);
       return;
     }

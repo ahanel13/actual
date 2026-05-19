@@ -254,7 +254,9 @@ export function BalanceHistoryGraph({
           const showSideLabels = !compact && !labelsAbove;
           const showTopLabels = !compact && labelsAbove;
           const chartWidth = showSideLabels ? width - LABEL_WIDTH : width;
-          const chartHeight = showTopLabels ? height - LABEL_HEIGHT_ABOVE : height;
+          const chartHeight = showTopLabels
+            ? height - LABEL_HEIGHT_ABOVE
+            : height;
 
           const hoveredIndex = hoveredValue
             ? balanceData.findIndex(d => d.date === hoveredValue.date)
@@ -295,11 +297,19 @@ export function BalanceHistoryGraph({
                     minWidth: 0,
                   }}
                 >
-                  <Text style={{ fontWeight: 700, color: theme.pageText, whiteSpace: 'nowrap' }}>
+                  <Text
+                    style={{
+                      fontWeight: 700,
+                      color: theme.pageText,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {hoveredValue.date}
                   </Text>
                   <PrivacyFilter activationFilters={[() => !isHovered]}>
-                    <Text style={{ color: theme.pageText, whiteSpace: 'nowrap' }}>
+                    <Text
+                      style={{ color: theme.pageText, whiteSpace: 'nowrap' }}
+                    >
                       {integerToCurrency(hoveredValue.balance)}
                     </Text>
                   </PrivacyFilter>
@@ -424,9 +434,7 @@ export function BalanceHistoryGraph({
                           {hoveredValue.date}
                         </Text>
                         <PrivacyFilter activationFilters={[() => !isHovered]}>
-                          <Text>
-                            {integerToCurrency(hoveredValue.balance)}
-                          </Text>
+                          <Text>{integerToCurrency(hoveredValue.balance)}</Text>
                         </PrivacyFilter>
                         {monthlyChange !== null && (
                           <Text

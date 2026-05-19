@@ -289,7 +289,7 @@ export function Budget() {
           </Text>
           <Button
             variant="bare"
-            aria-label={t("Previous month")}
+            aria-label={t('Previous month')}
             onPress={() =>
               onMonthSelect(monthUtils.prevMonth(startMonth), maxMonths)
             }
@@ -299,7 +299,7 @@ export function Budget() {
           </Button>
           <Button
             variant="bare"
-            aria-label={t("Next month")}
+            aria-label={t('Next month')}
             onPress={() =>
               onMonthSelect(monthUtils.nextMonth(startMonth), maxMonths)
             }
@@ -342,9 +342,9 @@ export function Budget() {
                 borderBottom: '2px solid ' + theme.sidebarItemAccentSelected,
                 cursor: 'default',
               }}
-            ><Trans>
-              Budget
-            </Trans></View>
+            >
+              <Trans>Budget</Trans>
+            </View>
             <View
               style={{
                 fontSize: 14,
@@ -354,9 +354,9 @@ export function Budget() {
                 marginLeft: 12,
                 cursor: 'default',
               }}
-            ><Trans>
-              Forecast
-            </Trans></View>
+            >
+              <Trans>Forecast</Trans>
+            </View>
           </View>
 
           {/* Spacer */}
@@ -377,9 +377,9 @@ export function Budget() {
               fontSize: 13,
             }}
           >
-            <SvgCog width={13} height={13} /><Trans>
-            Settings
-          </Trans></Button>
+            <SvgCog width={13} height={13} />
+            <Trans>Settings</Trans>
+          </Button>
         </View>
         <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
           <View style={{ flex: 1, overflow: 'hidden' }}>{table}</View>

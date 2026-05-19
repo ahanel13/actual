@@ -180,7 +180,9 @@ export function Categories() {
             onSave={name => {
               if (name === group.name) return;
               const { categories: _categories, ...rest } = group;
-              saveGroup.mutate({ group: { ...rest, name } as CategoryGroupEntity });
+              saveGroup.mutate({
+                group: { ...rest, name } as CategoryGroupEntity,
+              });
             }}
             onDelete={
               group.is_income
@@ -213,9 +215,7 @@ export function Categories() {
         <View style={{ paddingLeft: 20, marginTop: 2 }}>
           <Button
             variant="bare"
-            onPress={() =>
-              setNewCategoryDraft({ groupId: group.id, name: '' })
-            }
+            onPress={() => setNewCategoryDraft({ groupId: group.id, name: '' })}
             style={{
               fontSize: 12,
               color: theme.pageTextLight,
@@ -238,9 +238,7 @@ export function Categories() {
     <Setting
       primaryAction={
         showNewGroup ? (
-          <View
-            style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}
-          >
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
             <InlineRenameRow
               initialName=""
               placeholder={t('New group name')}
@@ -262,14 +260,12 @@ export function Categories() {
     >
       <Text>
         <Trans>
-          <strong>Categories</strong> — add, rename, and delete categories
-          and their groups outside the budget view. Click a name to rename.
+          <strong>Categories</strong> — add, rename, and delete categories and
+          their groups outside the budget view. Click a name to rename.
         </Trans>
       </Text>
       <View style={{ width: '100%', gap: 6 }}>
-        {groups
-          .filter(g => !g.hidden)
-          .map(renderGroup)}
+        {groups.filter(g => !g.hidden).map(renderGroup)}
       </View>
     </Setting>
   );

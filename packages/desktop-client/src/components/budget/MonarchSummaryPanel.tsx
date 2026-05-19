@@ -222,7 +222,9 @@ export function MonarchSummaryPanel({
 
   const incomeGroups = categoryGroups.filter(g => g.is_income && !g.hidden);
   const savingsGroups = categoryGroups.filter(g => g.is_savings && !g.hidden);
-  const expenseGroups = categoryGroups.filter(g => !g.is_income && !g.is_savings && !g.hidden);
+  const expenseGroups = categoryGroups.filter(
+    g => !g.is_income && !g.is_savings && !g.hidden,
+  );
 
   const totalIncomeBudget = Object.values(incomeBudgets).reduce(
     (sum, v) => sum + v,
@@ -524,8 +526,12 @@ export function MonarchSummaryPanel({
           {savingsGroups.length > 0 ? (
             savingsGroups.map(g => <GroupSectionCard key={g.id} group={g} />)
           ) : (
-            <View style={{ color: theme.pageTextSubdued, fontSize: 13, padding: 8 }}>
-              {t('No savings or investment groups found. Name a category group with keywords like "Savings" or "Investments" to see it here.')}
+            <View
+              style={{ color: theme.pageTextSubdued, fontSize: 13, padding: 8 }}
+            >
+              {t(
+                'No savings or investment groups found. Name a category group with keywords like "Savings" or "Investments" to see it here.',
+              )}
             </View>
           )}
         </>

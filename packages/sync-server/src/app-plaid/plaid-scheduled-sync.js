@@ -56,10 +56,10 @@ export async function runSyncForItem(itemId) {
   } catch (e) {
     const code = extractPlaidErrorCode(e);
     if (code && ITEM_ERROR_CODES.has(code)) {
-      db.mutate(
-        `UPDATE plaid_items SET error_code = ? WHERE item_id = ?`,
-        [code, itemId],
-      );
+      db.mutate(`UPDATE plaid_items SET error_code = ? WHERE item_id = ?`, [
+        code,
+        itemId,
+      ]);
     }
     return { ok: false, reason: e?.message ?? String(e), error_code: code };
   }
@@ -136,9 +136,14 @@ export function startScheduledSync() {
   }
 
   const hoursRaw = process.env.ACTUAL_PLAID_SYNC_INTERVAL_HOURS;
-  const hours = hoursRaw != null ? parseFloat(hoursRaw) : DEFAULT_INTERVAL_HOURS;
+  const hours =
+    hoursRaw != null ? parseFloat(hoursRaw) : DEFAULT_INTERVAL_HOURS;
   if (!Number.isFinite(hours) || hours <= 0) {
-    debug('Scheduled Plaid sync disabled (ACTUAL_PLAID_SYNC_INTERVAL_HOURS=' + hoursRaw + ')');
+    debug(
+      'Scheduled Plaid sync disabled (ACTUAL_PLAID_SYNC_INTERVAL_HOURS=' +
+        hoursRaw +
+        ')',
+    );
     return;
   }
 

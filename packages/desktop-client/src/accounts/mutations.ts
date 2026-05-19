@@ -21,8 +21,6 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { payeeQueries } from '#payees';
 import { useDispatch, useStore } from '#redux';
 import type { AppDispatch } from '#redux/store';
-
-import { plaidQueries } from './plaidQueries';
 import { setNewTransactions } from '#transactions/transactionsSlice';
 
 import {
@@ -31,6 +29,7 @@ import {
   markUpdatedAccounts,
   setAccountsSyncing,
 } from './accountsSlice';
+import { plaidQueries } from './plaidQueries';
 import { accountQueries } from './queries';
 
 const invalidateQueries = (queryClient: QueryClient, queryKey?: QueryKey) => {
@@ -558,9 +557,7 @@ export function useLinkAccountPlaidMutation() {
       console.error('Error linking account to Plaid:', error);
       dispatchErrorNotification(
         dispatch,
-        t(
-          'There was an error linking the account to Plaid. Please try again.',
-        ),
+        t('There was an error linking the account to Plaid. Please try again.'),
         error,
       );
     },
