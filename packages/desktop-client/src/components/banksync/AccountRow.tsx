@@ -65,9 +65,7 @@ export const AccountRow = memo(
           plain
           style={{ padding: '8px 4px 8px 10px', display: 'flex', alignItems: 'center' }}
         >
-          {account.account_sync_source && (
-            <BankLogo bankName={account.bankName} size={26} />
-          )}
+          <BankLogo bankName={account.bankName} size={26} />
         </Cell>
         <Cell
           name="accountName"

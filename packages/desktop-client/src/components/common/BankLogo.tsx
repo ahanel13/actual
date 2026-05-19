@@ -134,6 +134,8 @@ export function BankLogo({ bankName, institutionLogo, size = 28 }: BankLogoProps
   const [imgFailed, setImgFailed] = useState(false);
   const label = bankName ?? '';
 
+  if (!label && !institutionLogo) return null;
+
   const imgStyle: React.CSSProperties = {
     width: size,
     height: size,
