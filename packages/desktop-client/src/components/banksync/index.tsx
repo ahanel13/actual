@@ -22,6 +22,7 @@ import {
   groupBankSyncAccounts,
 } from './bankSyncUtils';
 import { BuiltInProviders } from './BuiltInProviders';
+import { PlaidGroupedSection } from './PlaidGroupedSection';
 import { useBuiltInBankSyncProviders } from './useBuiltInBankSyncProviders';
 
 export function BankSync() {
@@ -114,6 +115,27 @@ export function BankSync() {
         )}
 
         {groupedAccountEntries.map(([syncProvider, accounts]) => {
+          // Plaid accounts are rendered grouped under their institution headers
+          if (syncProvider === 'plaid') {
+            return (
+              <View key={syncProvider} style={{ minHeight: 'initial' }}>
+                {groupedAccountEntries.length > 1 && (
+                  <Text
+                    style={{ fontWeight: 500, fontSize: 20, margin: '.5em 0' }}
+                  >
+                    {syncSourceReadable[syncProvider]}
+                  </Text>
+                )}
+                <PlaidGroupedSection
+                  accounts={accounts}
+                  hoveredAccount={hoveredAccount}
+                  onHover={onHover}
+                  onAction={onAction}
+                />
+              </View>
+            );
+          }
+
           return (
             <View key={syncProvider} style={{ minHeight: 'initial' }}>
               {groupedAccountEntries.length > 1 && (

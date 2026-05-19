@@ -13,7 +13,6 @@ import { View } from '@actual-app/components/view';
 import { Warning } from '#components/alerts';
 import { Link } from '#components/common/Link';
 
-import { PlaidItemsStatus } from './PlaidItemsStatus';
 import type { BuiltInBankSyncProviderState } from './useBuiltInBankSyncProviders';
 
 type BuiltInProvidersProps = {
@@ -215,7 +214,6 @@ export function BuiltInProviders({
         </Warning>
       )}
 
-      <PlaidItemsStatus />
     </View>
   );
 }
