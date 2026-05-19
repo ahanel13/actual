@@ -158,14 +158,43 @@ export function SelectLinkedAccountsModal(
   const dispatch = useDispatch();
   const { data: allAccounts = [] } = useAccounts();
   const localAccounts = allAccounts.filter(a => a.closed === 0);
+  // Tracks the external account IDs that were already linked when this modal
+  // opened. Only these should produce an 'unlinking' entry when removed —
+  // removing a pre-selection from upgradingAccountId should not.
+  const [originallyLinkedExternalIds] = useState(() => {
+    const externalAccountIds = new Set(externalAccounts.map(a => a.account_id));
+    return new Set(
+      localAccounts
+        .filter(
+          acc => acc.account_id && externalAccountIds.has(acc.account_id),
+        )
+        .map(acc => acc.account_id as string),
+    );
+  });
+
   const [draftLinkAccounts, setDraftLinkAccounts] = useState<
     Map<string, 'linking' | 'unlinking'>
   >(() => {
-    const externalAccountIds = new Set(externalAccounts.map(a => a.account_id));
     const initial = new Map<string, 'linking' | 'unlinking'>();
-    for (const acc of localAccounts) {
-      if (acc.account_id && externalAccountIds.has(acc.account_id)) {
-        initial.set(acc.account_id, 'linking');
+    for (const id of originallyLinkedExternalIds) {
+      initial.set(id, 'linking');
+    }
+    // When upgrading an existing account, pre-mark the auto-selected external
+    // account as 'linking' so the confirm button is enabled immediately.
+    if (upgradingAccountId) {
+      const alreadyLinkedLocalIds = new Set(
+        localAccounts
+          .filter(acc => originallyLinkedExternalIds.has(acc.account_id ?? ''))
+          .map(acc => acc.id),
+      );
+      if (!alreadyLinkedLocalIds.has(upgradingAccountId)) {
+        const preselectedExternal =
+          propsWithSortedExternalAccounts.externalAccounts.find(
+            account => !initial.has(account.account_id),
+          );
+        if (preselectedExternal) {
+          initial.set(preselectedExternal.account_id, 'linking');
+        }
       }
     }
     return initial;
@@ -331,9 +360,17 @@ export function SelectLinkedAccountsModal(
         );
       } else {
         delete updatedAccounts[externalAccount.account_id];
-        setDraftLinkAccounts(prev =>
-          new Map(prev).set(externalAccount.account_id, 'unlinking'),
-        );
+        setDraftLinkAccounts(prev => {
+          const next = new Map(prev);
+          if (originallyLinkedExternalIds.has(externalAccount.account_id)) {
+            // Was linked before this modal opened → mark for unlinking
+            next.set(externalAccount.account_id, 'unlinking');
+          } else {
+            // Was only pre-selected (upgradingAccountId path) → just remove
+            next.delete(externalAccount.account_id);
+          }
+          return next;
+        });
       }
 
       return updatedAccounts;
@@ -720,6 +757,7 @@ function TableRow({
             focused
             strict
             highlightFirst
+            clearOnBlur={false}
             suggestions={availableAccountOptions}
             onSelect={value => {
               onSetLinkedAccount(externalAccount, value);
@@ -1121,6 +1159,7 @@ function AccountCard({
             focused
             strict
             highlightFirst
+            clearOnBlur={false}
             suggestions={availableAccountOptions}
             onSelect={value => {
               onSetLinkedAccount(externalAccount, value);
