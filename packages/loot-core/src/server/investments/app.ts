@@ -310,9 +310,126 @@ async function refreshAllPrices(): Promise<{
 const DAILY_SNAPSHOT_KEY = 'investments-last-snapshot-date';
 
 /**
- * Called once per budget load. If we haven't taken a price snapshot today,
- * refresh all investment prices (which writes balance_history). Fire-and-forget
- * so it never blocks app startup.
+ * Fill gaps in balance_history for investment accounts that have holdings.
+ * For each account, finds the earliest existing snapshot and fills every
+ * missing date from there to yesterday using Yahoo historical closes ×
+ * current share counts. Existing snapshots are never overwritten.
+ */
+async function fillBalanceHistoryGaps(accountId?: string): Promise<void> {
+  const accounts = accountId
+    ? await db.all<{ id: string }>(
+        `SELECT id FROM accounts WHERE id = ? AND type = 'investment' AND tombstone = 0 AND closed = 0`,
+        [accountId],
+      )
+    : await db.all<{ id: string }>(
+        `SELECT id FROM accounts WHERE type = 'investment' AND tombstone = 0 AND closed = 0`,
+      );
+
+  const today = monthUtils.currentDay();
+
+  for (const account of accounts) {
+    const holdings = await db.all<HoldingEntity>(
+      `SELECT * FROM holdings WHERE account_id = ? AND tombstone = 0`,
+      [account.id],
+    );
+    if (holdings.length === 0) continue;
+
+    // Start from the earliest existing snapshot; skip if none (today's
+    // snapshot will be written by refreshAllPrices, no gap yet)
+    const earliest = await db.first<{ date: string }>(
+      `SELECT MIN(date) as date FROM balance_history WHERE account_id = ? AND tombstone = 0`,
+      [account.id],
+    );
+    if (!earliest?.date || earliest.date >= today) continue;
+
+    const startDate = earliest.date;
+
+    // Existing snapshot dates — used to avoid re-inserting
+    const existingDates = new Set(
+      (
+        await db.all<{ date: string }>(
+          `SELECT date FROM balance_history WHERE account_id = ? AND tombstone = 0`,
+          [account.id],
+        )
+      ).map(r => r.date),
+    );
+
+    // Pick a Yahoo range wide enough to cover the gap
+    const msPerDay = 86_400_000;
+    const gapDays = Math.ceil(
+      (Date.now() - new Date(startDate).getTime()) / msPerDay,
+    );
+    const range =
+      gapDays > 365 * 4
+        ? '5y'
+        : gapDays > 365 * 2
+          ? '5y'
+          : gapDays > 365
+            ? '2y'
+            : gapDays > 180
+              ? '1y'
+              : '6mo';
+
+    // Fetch historical closes per symbol
+    const symbols = [...new Set(holdings.map(h => h.symbol))];
+    const priceHistory = new Map<string, Map<string, number>>();
+    for (const symbol of symbols) {
+      const result = await fetchYahooChart({ symbol, range });
+      if (!result?.timestamps?.length) continue;
+      const dateMap = new Map<string, number>();
+      for (let i = 0; i < result.timestamps.length; i++) {
+        const date = new Date(result.timestamps[i] * 1000)
+          .toISOString()
+          .slice(0, 10);
+        if (date >= startDate && date < today && result.closes[i] != null) {
+          dateMap.set(date, result.closes[i] as number);
+        }
+      }
+      priceHistory.set(symbol, dateMap);
+    }
+
+    // Collect all dates that have any price data and are missing a snapshot
+    const missingDates = new Set<string>();
+    for (const dateMap of priceHistory.values()) {
+      for (const date of dateMap.keys()) {
+        if (!existingDates.has(date)) missingDates.add(date);
+      }
+    }
+    if (missingDates.size === 0) continue;
+
+    // Insert snapshots for missing dates using carry-forward prices
+    const sortedDates = [...missingDates].sort();
+    const lastKnown = new Map<string, number>();
+
+    await batchMessages(async () => {
+      for (const date of sortedDates) {
+        for (const h of holdings) {
+          const p = priceHistory.get(h.symbol)?.get(date);
+          if (p != null) lastKnown.set(h.symbol, p);
+        }
+        const valueInt = Math.round(
+          holdings.reduce(
+            (sum, h) => sum + h.shares * (lastKnown.get(h.symbol) ?? 0),
+            0,
+          ) * 100,
+        );
+        if (valueInt > 0) {
+          await db.insertWithUUID('balance_history', {
+            account_id: account.id,
+            date,
+            balance: valueInt,
+            tombstone: 0,
+          });
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Called once per budget load. Refreshes today's prices (writing today's
+ * balance_history entry) and fills any gaps since the last snapshot using
+ * Yahoo historical closes × current holdings.
  */
 export async function maybeDailySnapshot(): Promise<void> {
   const today = monthUtils.currentDay();
@@ -322,6 +439,8 @@ export async function maybeDailySnapshot(): Promise<void> {
   const result = await refreshAllPrices();
   if (!('error' in result) || result.error === undefined) {
     await asyncStorage.setItem(DAILY_SNAPSHOT_KEY, today);
+    // Fill any gaps between the last snapshot and today
+    void fillBalanceHistoryGaps();
   }
 }
 
