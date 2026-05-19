@@ -22,10 +22,22 @@ type AccountRowProps = {
   onHover: (id: AccountEntity['id'] | null) => void;
   onAction: (account: AccountEntity, action: 'link' | 'edit') => void;
   locale: Locale;
+  /** Fallback institution name when account.bankName is null */
+  institutionName?: string | null;
+  /** Base64 Plaid logo to show when available */
+  institutionLogo?: string | null;
 };
 
 export const AccountRow = memo(
-  ({ account, hovered, onHover, onAction, locale }: AccountRowProps) => {
+  ({
+    account,
+    hovered,
+    onHover,
+    onAction,
+    locale,
+    institutionName,
+    institutionLogo,
+  }: AccountRowProps) => {
     const backgroundFocus = hovered;
     const [isEditing, setIsEditing] = useState(false);
     const { mutate: updateAccount } = useUpdateAccountMutation();
@@ -65,7 +77,11 @@ export const AccountRow = memo(
           plain
           style={{ padding: '8px 4px 8px 10px', display: 'flex', alignItems: 'center' }}
         >
-          <BankLogo bankName={account.bankName} size={26} />
+          <BankLogo
+            bankName={account.bankName ?? institutionName}
+            institutionLogo={institutionLogo}
+            size={26}
+          />
         </Cell>
         <Cell
           name="accountName"

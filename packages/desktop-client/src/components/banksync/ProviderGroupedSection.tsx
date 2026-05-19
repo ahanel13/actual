@@ -83,6 +83,7 @@ export function ProviderGroupedSection({
                 onHover={onHover}
                 onAction={onAction}
                 locale={locale}
+                institutionName={bankName}
               />
             ))}
           </View>

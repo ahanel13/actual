@@ -207,6 +207,8 @@ export function PlaidGroupedSection({
                 onHover={onHover}
                 onAction={onAction}
                 locale={locale}
+                institutionName={item.institution_name}
+                institutionLogo={item.institution_logo}
               />
             ))}
           </View>
