@@ -17,7 +17,7 @@ import { MobilePageHeader, Page } from '#components/Page';
 import { useAccount } from '#hooks/useAccount';
 import { useNavigate } from '#hooks/useNavigate';
 import { pushModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
+import { useDispatch, useSelector } from '#redux';
 
 export function MobileBankSyncAccountEditPage() {
   const { t } = useTranslation();
@@ -54,6 +54,11 @@ export function MobileBankSyncAccountEditPage() {
     void navigate('/bank-sync');
   };
 
+  const syncingAccountIds = useSelector(
+    state => state.account.accountsSyncing,
+  );
+  const isSyncing = accountId ? syncingAccountIds.includes(accountId) : false;
+
   const unlinkAccount = useUnlinkAccountMutation();
   const handleUnlink = () => {
     dispatch(
@@ -69,6 +74,41 @@ export function MobileBankSyncAccountEditPage() {
                   { id: accountId },
                   {
                     onSuccess: () => navigate('/bank-sync'),
+                  },
+                );
+              }
+            },
+          },
+        },
+      }),
+    );
+  };
+
+  const handleChangeProvider = () => {
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'confirm-unlink-account',
+          options: {
+            accountName: account?.name || '',
+            isViewBankSyncSettings: false,
+            isChangingProvider: true,
+            onUnlink: () => {
+              if (accountId) {
+                unlinkAccount.mutate(
+                  { id: accountId },
+                  {
+                    onSuccess: () => {
+                      void navigate('/bank-sync');
+                      dispatch(
+                        pushModal({
+                          modal: {
+                            name: 'add-account',
+                            options: { upgradingAccountId: accountId },
+                          },
+                        }),
+                      );
+                    },
                   },
                 );
               }
@@ -172,14 +212,21 @@ export function MobileBankSyncAccountEditPage() {
             alignItems: 'center',
           }}
         >
-          <Button
-            style={{
-              color: theme.errorText,
-            }}
-            onPress={handleUnlink}
-          >
-            <Trans>Unlink account</Trans>
-          </Button>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            <Button
+              style={{ color: theme.errorText }}
+              onPress={handleUnlink}
+            >
+              <Trans>Unlink account</Trans>
+            </Button>
+            <Button
+              variant="bare"
+              isDisabled={isSyncing}
+              onPress={handleChangeProvider}
+            >
+              <Trans>Change provider</Trans>
+            </Button>
+          </View>
 
           <SpaceBetween gap={10}>
             <Button onPress={handleCancel}>

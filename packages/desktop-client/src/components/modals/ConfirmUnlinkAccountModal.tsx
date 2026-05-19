@@ -17,9 +17,27 @@ type ConfirmUnlinkAccountModalProps = Extract<
 export function ConfirmUnlinkAccountModal({
   accountName,
   isViewBankSyncSettings,
+  isChangingProvider = false,
   onUnlink,
 }: ConfirmUnlinkAccountModalProps) {
   const { t } = useTranslation();
+
+  const title = isChangingProvider
+    ? t('Change sync provider')
+    : t('Confirm Unlink');
+
+  const body = isChangingProvider
+    ? t(
+        'This will disconnect {{accountName}} from its current provider. You can immediately re-link it to a different provider. Your transactions, balance history, and holdings will be preserved.',
+        { accountName },
+      )
+    : isViewBankSyncSettings
+      ? t(
+          'Transactions will no longer be synchronized with this account and must be manually entered. You will not be able to edit the bank sync settings for this account and the settings will close.',
+        )
+      : t(
+          'Transactions will no longer be synchronized with this account and must be manually entered.',
+        );
 
   return (
     <Modal
@@ -29,25 +47,19 @@ export function ConfirmUnlinkAccountModal({
       {({ state }) => (
         <>
           <ModalHeader
-            title={t('Confirm Unlink')} // Use translation for title
+            title={title}
             rightContent={<ModalCloseButton onPress={() => state.close()} />}
           />
           <View style={{ lineHeight: 1.5 }}>
-            <Paragraph>
-              <Trans>
-                Are you sure you want to unlink <strong>{accountName}</strong>?
-              </Trans>
-            </Paragraph>
+            {!isChangingProvider && (
+              <Paragraph>
+                <Trans>
+                  Are you sure you want to unlink <strong>{accountName}</strong>?
+                </Trans>
+              </Paragraph>
+            )}
 
-            <Paragraph>
-              {isViewBankSyncSettings
-                ? t(
-                    'Transactions will no longer be synchronized with this account and must be manually entered. You will not be able to edit the bank sync settings for this account and the settings will close.',
-                  )
-                : t(
-                    'Transactions will no longer be synchronized with this account and must be manually entered.',
-                  )}
-            </Paragraph>
+            <Paragraph>{body}</Paragraph>
 
             <View
               style={{
@@ -66,7 +78,11 @@ export function ConfirmUnlinkAccountModal({
                     state.close();
                   }}
                 >
-                  <Trans>Unlink</Trans>
+                  {isChangingProvider ? (
+                    <Trans>Continue</Trans>
+                  ) : (
+                    <Trans>Unlink</Trans>
+                  )}
                 </Button>
               </InitialFocus>
             </View>

@@ -622,6 +622,7 @@ export type Modal =
       options: {
         accountName: string;
         isViewBankSyncSettings: boolean;
+        isChangingProvider?: boolean;
         onUnlink: () => void;
       };
     }

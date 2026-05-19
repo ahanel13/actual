@@ -11,7 +11,7 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { useUnlinkAccountMutation } from '#accounts';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { pushModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
+import { useDispatch, useSelector } from '#redux';
 
 import { BankSyncCheckboxOptions } from './BankSyncCheckboxOptions';
 import { FieldMapping } from './FieldMapping';
@@ -156,6 +156,11 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
     close();
   };
 
+  const syncingAccountIds = useSelector(
+    state => state.account.accountsSyncing,
+  );
+  const isSyncing = syncingAccountIds.includes(account.id);
+
   const unlinkAccount = useUnlinkAccountMutation();
   const onUnlink = async (close: () => void) => {
     dispatch(
@@ -170,6 +175,39 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
                 { id: account.id },
                 {
                   onSuccess: close,
+                },
+              );
+            },
+          },
+        },
+      }),
+    );
+  };
+
+  const onChangeProvider = (close: () => void) => {
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'confirm-unlink-account',
+          options: {
+            accountName: account.name,
+            isViewBankSyncSettings: false,
+            isChangingProvider: true,
+            onUnlink: () => {
+              unlinkAccount.mutate(
+                { id: account.id },
+                {
+                  onSuccess: () => {
+                    close();
+                    dispatch(
+                      pushModal({
+                        modal: {
+                          name: 'add-account',
+                          options: { upgradingAccountId: account.id },
+                        },
+                      }),
+                    );
+                  },
                 },
               );
             },
@@ -238,14 +276,23 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
               marginTop: 20,
             }}
           >
-            <Button
-              style={{ color: theme.errorText }}
-              onPress={() => {
-                void onUnlink(() => state.close());
-              }}
-            >
-              <Trans>Unlink account</Trans>
-            </Button>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <Button
+                style={{ color: theme.errorText }}
+                onPress={() => {
+                  void onUnlink(() => state.close());
+                }}
+              >
+                <Trans>Unlink account</Trans>
+              </Button>
+              <Button
+                variant="bare"
+                isDisabled={isSyncing}
+                onPress={() => onChangeProvider(() => state.close())}
+              >
+                <Trans>Change sync provider</Trans>
+              </Button>
+            </View>
 
             <SpaceBetween gap={10}>
               <Button onPress={() => state.close()}>
