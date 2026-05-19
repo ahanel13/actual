@@ -13,7 +13,7 @@ import { useBuiltInBankSyncProviders } from '#components/banksync/useBuiltInBank
 import { Link } from '#components/common/Link';
 import { Modal, ModalCloseButton, ModalHeader } from '#components/common/Modal';
 import { useNavigate } from '#hooks/useNavigate';
-import { pushModal } from '#modals/modalsSlice';
+import { popModal, pushModal } from '#modals/modalsSlice';
 import type { Modal as ModalType } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
@@ -70,7 +70,15 @@ export function CreateAccountModal({
                   </Trans>
                 </Paragraph>
                 <BuiltInProviders
-                  providers={providers}
+                  // Close add-account before any provider opens its own
+                  // modal/iframe, so the backdrop here doesn't cover it.
+                  providers={providers.map(p => ({
+                    ...p,
+                    onLink: () => {
+                      dispatch(popModal());
+                      p.onLink();
+                    },
+                  }))}
                   syncServerStatus={syncServerStatus}
                   showPermissionWarning={showPermissionWarning}
                   providersNeedingConfiguration={providersNeedingConfiguration}
