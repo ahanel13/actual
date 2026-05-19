@@ -23,6 +23,7 @@ import {
 import { useAccounts } from '#hooks/useAccounts';
 import { useBalanceHistory } from '#hooks/useBalanceHistory';
 import { useHoldings } from '#hooks/useHoldings';
+import { useNavigate } from '#hooks/useNavigate';
 import { useRefreshAllPricesMutation } from '#investments/mutations';
 
 type TimeRange = '1mo' | '3mo' | '6mo' | '1y';
@@ -337,8 +338,10 @@ function AllocationSection({
 }: {
   accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[];
 }) {
+  const navigate = useNavigate();
   const rows = accountData
     .map(({ account, holdings }) => ({
+      id: account.id,
       name: account.name,
       value: holdings.reduce((s, h) => s + holdingValueCents(h), 0),
       hasHoldings: holdings.length > 0,
@@ -394,11 +397,14 @@ function AllocationSection({
                   }}
                 >
                   <span
+                    onClick={() => navigate(`/accounts/${row.id}`)}
                     style={{
                       flex: 1,
                       minWidth: 0,
                       overflowWrap: 'anywhere',
                       paddingRight: 8,
+                      cursor: 'pointer',
+                      color: theme.pageTextLink ?? theme.pageText,
                     }}
                   >
                     {row.name}
@@ -480,10 +486,12 @@ function AllocationSection({
                     }}
                   />
                   <span
+                    onClick={() => navigate(`/accounts/${row.id}`)}
                     style={{
-                      color: theme.pageText,
+                      color: theme.pageTextLink ?? theme.pageText,
                       overflowWrap: 'anywhere',
                       minWidth: 0,
+                      cursor: 'pointer',
                     }}
                   >
                     {row.name}
@@ -547,9 +555,14 @@ function HoldingsSection({
 }: {
   accountData: { account: AccountEntity; holdings: HoldingWithPrice[] }[];
 }) {
+  const navigate = useNavigate();
   const allHoldings = accountData
     .flatMap(({ account, holdings }) =>
-      holdings.map(h => ({ ...h, accountName: account.name })),
+      holdings.map(h => ({
+        ...h,
+        accountName: account.name,
+        accountId: account.id,
+      })),
     )
     .sort((a, b) => holdingValueCents(b) - holdingValueCents(a));
 
@@ -641,12 +654,14 @@ function HoldingsSection({
               {h.name ?? h.symbol}
             </span>
             <span
+              onClick={() => navigate(`/accounts/${h.accountId}`)}
               style={{
-                color: theme.pageTextSubdued,
+                color: theme.pageTextLink ?? theme.pageTextSubdued,
                 overflowWrap: 'anywhere',
                 paddingRight: 10,
                 fontSize: 12,
                 minWidth: 0,
+                cursor: 'pointer',
               }}
             >
               {h.accountName}
