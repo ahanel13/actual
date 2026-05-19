@@ -368,6 +368,11 @@ function SingleAutocomplete<T extends AutocompleteItem>({
             // Do nothing if it is a "touch" selection event
             Downshift.stateChangeTypes.touchEnd,
             Downshift.stateChangeTypes.mouseUp,
+            // Do nothing on keyboard/click selection — the input value changing
+            // to itemToString(selectedItem) would otherwise call open() and
+            // reopen the dropdown immediately after onSelect closed it.
+            Downshift.stateChangeTypes.keyDownEnter,
+            Downshift.stateChangeTypes.clickItem,
             // @ts-expect-error Types say there is no type
           ].includes(changes.type)
         ) {
