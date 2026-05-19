@@ -36,6 +36,7 @@ import type {
 import { format as formatDate } from 'date-fns';
 
 import { AnimatedRefresh } from '#components/AnimatedRefresh';
+import { Link } from '#components/common/Link';
 import { Search } from '#components/common/Search';
 import { FilterButton } from '#components/filters/FiltersMenu';
 import { FiltersStack } from '#components/filters/FiltersStack';
@@ -633,19 +634,26 @@ function AccountSyncSidebar({
   accountsSyncing,
 }: AccountSyncSidebarProps) {
   return (
-    <View
-      style={{
-        backgroundColor: accountsSyncing.includes(account.id)
-          ? theme.sidebarItemBackgroundPending
-          : failedAccounts.has(account.id)
-            ? theme.sidebarItemBackgroundFailed
-            : theme.sidebarItemBackgroundPositive,
-        marginRight: '4px',
-        width: 8,
-        height: 8,
-        borderRadius: 8,
-      }}
-    />
+    <Link
+      variant="internal"
+      to="/bank-sync"
+      style={{ display: 'flex', alignItems: 'center' }}
+    >
+      <View
+        style={{
+          backgroundColor: accountsSyncing.includes(account.id)
+            ? theme.sidebarItemBackgroundPending
+            : failedAccounts.has(account.id)
+              ? theme.sidebarItemBackgroundFailed
+              : theme.sidebarItemBackgroundPositive,
+          marginRight: '4px',
+          width: 8,
+          height: 8,
+          borderRadius: 8,
+          cursor: 'pointer',
+        }}
+      />
+    </Link>
   );
 }
 
