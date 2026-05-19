@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -23,8 +23,42 @@ import {
 import { useAccounts } from '#hooks/useAccounts';
 import { useBalanceHistory } from '#hooks/useBalanceHistory';
 import { useHoldings } from '#hooks/useHoldings';
+import { useRefreshAllPricesMutation } from '#investments/mutations';
 
 type TimeRange = '1mo' | '3mo' | '6mo' | '1y';
+
+const STALE_MINUTES = 15;
+
+function oldestPriceFetch(
+  accountData: { holdings: HoldingWithPrice[] }[],
+): { oldest: string | null; hasMissing: boolean; hasHoldings: boolean } {
+  let oldest: string | null = null;
+  let hasMissing = false;
+  let hasHoldings = false;
+  for (const { holdings } of accountData) {
+    for (const h of holdings) {
+      if (h.shares === 0) continue;
+      hasHoldings = true;
+      if (h.price_fetched_at == null) {
+        hasMissing = true;
+      } else if (oldest == null || h.price_fetched_at < oldest) {
+        oldest = h.price_fetched_at;
+      }
+    }
+  }
+  return { oldest, hasMissing, hasHoldings };
+}
+
+function formatTimeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return 'just now';
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 const RANGE_LABELS: Record<TimeRange, string> = {
   '1mo': '1M',
@@ -307,12 +341,15 @@ function AllocationSection({
     .map(({ account, holdings }) => ({
       name: account.name,
       value: holdings.reduce((s, h) => s + holdingValueCents(h), 0),
+      hasHoldings: holdings.length > 0,
     }))
-    .filter(r => r.value > 0)
+    .filter(r => r.hasHoldings)
     .sort((a, b) => b.value - a.value);
 
+  if (rows.length === 0) return null;
+
   const total = rows.reduce((s, r) => s + r.value, 0);
-  if (total === 0) return null;
+  const hasPrices = total > 0;
 
   return (
     <View
@@ -322,6 +359,7 @@ function AllocationSection({
         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         padding: '20px 24px',
         marginBottom: 24,
+        flexShrink: 0,
       }}
     >
       <div
@@ -341,9 +379,9 @@ function AllocationSection({
         }}
       >
         {/* Bars */}
-        <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ flex: '1 1 200px', minWidth: 0 }}>
           {rows.map((row, i) => {
-            const pct = (row.value / total) * 100;
+            const pct = hasPrices ? (row.value / total) * 100 : 0;
             return (
               <div key={row.name} style={{ marginBottom: 14 }}>
                 <div
@@ -357,15 +395,17 @@ function AllocationSection({
                 >
                   <span
                     style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '70%',
+                      flex: 1,
+                      minWidth: 0,
+                      overflowWrap: 'anywhere',
+                      paddingRight: 8,
                     }}
                   >
                     {row.name}
                   </span>
-                  <span>{pct.toFixed(1)}%</span>
+                  <span style={{ flexShrink: 0 }}>
+                    {hasPrices ? `${pct.toFixed(1)}%` : '—'}
+                  </span>
                 </div>
                 <div
                   style={{
@@ -389,11 +429,11 @@ function AllocationSection({
           })}
         </div>
         {/* Table */}
-        <div style={{ minWidth: 280 }}>
+        <div style={{ flex: '1 1 280px', minWidth: 0, maxWidth: '100%' }}>
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 60px 110px',
+              gridTemplateColumns: 'minmax(0, 1fr) 60px 110px',
               gap: '8px 12px',
               fontSize: 13,
             }}
@@ -442,25 +482,26 @@ function AllocationSection({
                   <span
                     style={{
                       color: theme.pageText,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      overflowWrap: 'anywhere',
+                      minWidth: 0,
                     }}
                   >
                     {row.name}
                   </span>
                 </div>
                 <span style={{ color: theme.pageText, textAlign: 'right' }}>
-                  {((row.value / total) * 100).toFixed(1)}%
+                  {hasPrices
+                    ? `${((row.value / total) * 100).toFixed(1)}%`
+                    : '—'}
                 </span>
                 <span
                   style={{
-                    color: theme.pageText,
+                    color: hasPrices ? theme.pageText : theme.pageTextSubdued,
                     textAlign: 'right',
                     fontWeight: 500,
                   }}
                 >
-                  ${integerToCurrency(row.value)}
+                  {hasPrices ? `$${integerToCurrency(row.value)}` : '—'}
                 </span>
               </React.Fragment>
             ))}
@@ -481,16 +522,16 @@ function AllocationSection({
                 textAlign: 'right',
               }}
             >
-              100%
+              {hasPrices ? '100%' : '—'}
             </span>
             <span
               style={{
                 fontWeight: 700,
-                color: theme.pageText,
+                color: hasPrices ? theme.pageText : theme.pageTextSubdued,
                 textAlign: 'right',
               }}
             >
-              ${integerToCurrency(total)}
+              {hasPrices ? `$${integerToCurrency(total)}` : '—'}
             </span>
           </div>
         </div>
@@ -529,7 +570,8 @@ function HoldingsSection({
     );
   }
 
-  const cols = '70px 1fr 160px 90px 80px 110px 120px';
+  const cols =
+    '80px minmax(0, 1.4fr) minmax(0, 1fr) 90px 90px 120px 130px';
 
   return (
     <View
@@ -537,7 +579,7 @@ function HoldingsSection({
         background: theme.cardBackground,
         borderRadius: 12,
         boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        overflow: 'hidden',
+        flexShrink: 0,
       }}
     >
       {/* Header */}
@@ -591,10 +633,9 @@ function HoldingsSection({
             <span
               style={{
                 color: theme.pageTextSubdued,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                overflowWrap: 'anywhere',
                 paddingRight: 10,
+                minWidth: 0,
               }}
             >
               {h.name ?? h.symbol}
@@ -602,11 +643,10 @@ function HoldingsSection({
             <span
               style={{
                 color: theme.pageTextSubdued,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                overflowWrap: 'anywhere',
                 paddingRight: 10,
                 fontSize: 12,
+                minWidth: 0,
               }}
             >
               {h.accountName}
@@ -681,29 +721,47 @@ function ViewTabs({
     { value: 'allocation', label: 'Allocation' },
   ];
   return (
-    <div style={{ display: 'flex', gap: 0 }}>
-      {tabs.map(tab => (
-        <button
-          key={tab.value}
-          onClick={() => onChange(tab.value)}
-          style={{
-            padding: '8px 18px',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 600,
-            color: value === tab.value ? theme.pageText : theme.pageTextSubdued,
-            borderBottom:
-              value === tab.value
-                ? `2px solid ${PORTFOLIO_COLOR}`
-                : '2px solid transparent',
-            transition: 'color 0.15s, border-color 0.15s',
-          }}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div
+      role="tablist"
+      style={{
+        display: 'inline-flex',
+        gap: 2,
+        backgroundColor: theme.tableBackground,
+        borderRadius: 10,
+        padding: 4,
+      }}
+    >
+      {tabs.map(tab => {
+        const active = value === tab.value;
+        return (
+          <button
+            key={tab.value}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(tab.value)}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 7,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              backgroundColor: active ? theme.cardBackground : 'transparent',
+              color: active ? theme.pageText : theme.pageTextSubdued,
+              boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+              transition: 'background-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => {
+              if (!active) e.currentTarget.style.color = theme.pageText;
+            }}
+            onMouseLeave={e => {
+              if (!active) e.currentTarget.style.color = theme.pageTextSubdued;
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -724,6 +782,27 @@ export function InvestmentsDashboard() {
 
   const accountData = useAllAccountData(investmentAccounts);
   const sp500Data = useSP500Chart(range);
+
+  const refreshAll = useRefreshAllPricesMutation();
+  const autoCheckedRef = useRef(false);
+
+  const { oldest: oldestFetch, hasMissing, hasHoldings } = useMemo(
+    () => oldestPriceFetch(accountData),
+    [accountData],
+  );
+
+  useEffect(() => {
+    if (autoCheckedRef.current) return;
+    if (!hasHoldings) return;
+    autoCheckedRef.current = true;
+    const isStale =
+      hasMissing ||
+      !oldestFetch ||
+      Date.now() - new Date(oldestFetch).getTime() > STALE_MINUTES * 60_000;
+    if (isStale) {
+      refreshAll.mutate();
+    }
+  }, [hasHoldings, hasMissing, oldestFetch, refreshAll]);
 
   const portfolioSeries = useMemo(
     () => buildPortfolioSeries(accountData, range),
@@ -757,33 +836,83 @@ export function InvestmentsDashboard() {
   };
 
   return (
-    <View style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
+    <View style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
       {/* Page header */}
-      <div style={{ marginBottom: 4 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}>
-          Investments
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 4,
+          gap: 16,
+        }}
+      >
+        <div>
+          <div
+            style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}
+          >
+            Investments
+          </div>
+          {totalValue > 0 && (
+            <div
+              style={{
+                fontSize: 30,
+                fontWeight: 700,
+                color: theme.pageText,
+                marginTop: 2,
+              }}
+            >
+              ${integerToCurrency(totalValue)}
+            </div>
+          )}
         </div>
-        {totalValue > 0 && (
+        {hasHoldings && (
           <div
             style={{
-              fontSize: 30,
-              fontWeight: 700,
-              color: theme.pageText,
-              marginTop: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: 4,
+              marginTop: 4,
             }}
           >
-            ${integerToCurrency(totalValue)}
+            <button
+              onClick={() => refreshAll.mutate()}
+              disabled={refreshAll.isPending}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 8,
+                border: `1px solid ${theme.tableBorder}`,
+                background: refreshAll.isPending
+                  ? theme.tableBackground
+                  : theme.cardBackground,
+                color: theme.pageText,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: refreshAll.isPending ? 'default' : 'pointer',
+                opacity: refreshAll.isPending ? 0.6 : 1,
+              }}
+            >
+              {refreshAll.isPending ? 'Refreshing…' : 'Refresh prices'}
+            </button>
+            <div
+              style={{
+                fontSize: 11,
+                color: theme.pageTextSubdued,
+              }}
+            >
+              {hasMissing
+                ? 'Prices not yet fetched'
+                : oldestFetch
+                  ? `Updated ${formatTimeAgo(oldestFetch)}`
+                  : ''}
+            </div>
           </div>
         )}
       </div>
 
       {/* Tab bar */}
-      <div
-        style={{
-          marginBottom: 20,
-          borderBottom: `1px solid ${theme.tableBorder}`,
-        }}
-      >
+      <div style={{ marginTop: 16, marginBottom: 20 }}>
         <ViewTabs value={view} onChange={setView} />
       </div>
 
@@ -796,6 +925,8 @@ export function InvestmentsDashboard() {
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             padding: '20px 24px',
             marginBottom: 24,
+            overflow: 'hidden',
+            flexShrink: 0,
           }}
         >
           {/* Card header with range picker */}
@@ -834,11 +965,12 @@ export function InvestmentsDashboard() {
 
           {/* Chart */}
           {chartData.length > 1 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-              >
+            <div style={{ width: '100%', height: 320, overflow: 'hidden' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke={theme.tableBorder}
@@ -860,7 +992,9 @@ export function InvestmentsDashboard() {
                   tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
                   tickLine={false}
                   axisLine={false}
-                  width={58}
+                  width={64}
+                  padding={{ top: 8, bottom: 8 }}
+                  tickCount={6}
                 />
                 <ReferenceLine
                   y={0}
@@ -899,8 +1033,9 @@ export function InvestmentsDashboard() {
                   dot={false}
                   connectNulls
                 />
-              </LineChart>
-            </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div
               style={{
