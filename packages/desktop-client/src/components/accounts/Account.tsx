@@ -85,6 +85,7 @@ import type { AppDispatch } from '#redux/store';
 import { updateNewTransactions } from '#transactions/transactionsSlice';
 
 import { AccountEmptyMessage } from './AccountEmptyMessage';
+import { BulkEditBar } from './BulkEditBar';
 import { AccountHeader } from './Header';
 
 type ConditionEntity = Partial<RuleConditionEntity> | TransactionFilterEntity;
@@ -1862,6 +1863,12 @@ class AccountInternal extends PureComponent<
                 onMakeAsSplitTransaction={this.onMakeAsSplitTransaction}
                 onMakeAsNonSplitTransactions={this.onMakeAsNonSplitTransactions}
                 onMergeTransactions={this.onMergeTransactions}
+              />
+
+              <BulkEditBar
+                onEdit={this.onBatchEdit}
+                onDelete={this.onBatchDelete}
+                onDuplicate={this.onBatchDuplicate}
               />
 
               <View style={{ flex: 1 }}>
