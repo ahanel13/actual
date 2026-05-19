@@ -501,7 +501,7 @@ function AllocationSection({
                     fontWeight: 500,
                   }}
                 >
-                  {hasPrices ? `$${integerToCurrency(row.value)}` : '—'}
+                  {hasPrices ? integerToCurrency(row.value) : '—'}
                 </span>
               </React.Fragment>
             ))}
@@ -531,7 +531,7 @@ function AllocationSection({
                 textAlign: 'right',
               }}
             >
-              {hasPrices ? `$${integerToCurrency(total)}` : '—'}
+              {hasPrices ? integerToCurrency(total) : '—'}
             </span>
           </div>
         </div>
@@ -678,7 +678,7 @@ function HoldingsSection({
                       fontWeight: 600,
                     }}
                   >
-                    {gainLoss >= 0 ? '+' : '-'}$
+                    {gainLoss >= 0 ? '+' : '-'}
                     {integerToCurrency(Math.abs(gainLoss))}
                   </div>
                   {gainPct != null && (
@@ -862,7 +862,7 @@ export function InvestmentsDashboard() {
                 marginTop: 2,
               }}
             >
-              ${integerToCurrency(totalValue)}
+              {integerToCurrency(totalValue)}
             </div>
           )}
         </div>
