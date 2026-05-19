@@ -300,6 +300,12 @@ async function refreshAllPrices(): Promise<{
     }
   });
 
+  // After writing today's snapshot, fill any gaps since the earliest
+  // existing snapshot using Yahoo historical closes. Fire-and-forget.
+  if (snapshotsUpdated > 0) {
+    void fillBalanceHistoryGaps();
+  }
+
   return {
     fetched_at: now,
     symbols_updated: priceMap.size,

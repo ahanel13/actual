@@ -14,7 +14,6 @@ import * as db from '#server/db';
 import * as mappings from '#server/db/mappings';
 import { handleBudgetImport } from '#server/importers';
 import type { ImportableBudgetType } from '#server/importers';
-import { maybeDailySnapshot } from '#server/investments/app';
 import { app as mainApp } from '#server/main-app';
 import { mutator } from '#server/mutators';
 import * as prefs from '#server/prefs';
@@ -638,9 +637,6 @@ async function _loadBudget(id: Budget['id']): Promise<{
   }
 
   app.events.emit('load-budget', { id });
-
-  // Fire-and-forget: take a daily investment price snapshot if we haven't today
-  void maybeDailySnapshot();
 
   return {};
 }
