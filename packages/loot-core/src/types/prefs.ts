@@ -158,6 +158,7 @@ export type GlobalPrefsJson = Partial<{
   'server-self-signed-cert'?: GlobalPrefs['serverSelfSignedCert'];
   syncServerConfig?: GlobalPrefs['syncServerConfig'];
   notifyWhenUpdateIsAvailable?: GlobalPrefs['notifyWhenUpdateIsAvailable'];
+  'investments-last-snapshot-date'?: string; // YYYY-MM-DD
 }>;
 
 export type AuthMethods = 'password' | 'openid';
