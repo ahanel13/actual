@@ -47,23 +47,26 @@ export function PlaidGroupedSection({
   const locale = useLocale();
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
 
-  // Group accounts by Plaid item_id.
-  // account.bankId = banks.bank_id = Plaid item_id (set by linkPlaidAccount).
-  const accountsByItemId = useMemo(() => {
+  // Group accounts by institution name.
+  // db.getAccounts returns bankId = banks.id (internal UUID), NOT banks.bank_id
+  // (Plaid item_id). The only shared key between AccountEntity and PlaidItem
+  // that the client can see is bankName === institution_name.
+  const accountsByInstitution = useMemo(() => {
     const map = new Map<string, AccountEntity[]>();
     for (const account of accounts) {
-      if (account.bankId) {
-        const list = map.get(account.bankId) ?? [];
+      const key = account.bankName ?? '';
+      if (key) {
+        const list = map.get(key) ?? [];
         list.push(account);
-        map.set(account.bankId, list);
+        map.set(key, list);
       }
     }
     return map;
   }, [accounts]);
 
-  // Accounts not associated with any Plaid item
+  // Accounts with no bankName — orphans not matched to any institution
   const orphanAccounts = useMemo(
-    () => accounts.filter(a => !a.bankId),
+    () => accounts.filter(a => !a.bankName),
     [accounts],
   );
 
@@ -106,7 +109,7 @@ export function PlaidGroupedSection({
   return (
     <View style={{ gap: 16 }}>
       {items.map(item => {
-        const itemAccounts = accountsByItemId.get(item.item_id) ?? [];
+        const itemAccounts = accountsByInstitution.get(item.institution_name ?? '') ?? [];
         const lastSynced = item.last_synced_at
           ? formatDistanceToNow(new Date(item.last_synced_at), {
               addSuffix: true,
