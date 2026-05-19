@@ -23,6 +23,7 @@ import {
 } from './bankSyncUtils';
 import { BuiltInProviders } from './BuiltInProviders';
 import { PlaidGroupedSection } from './PlaidGroupedSection';
+import { ProviderGroupedSection } from './ProviderGroupedSection';
 import { useBuiltInBankSyncProviders } from './useBuiltInBankSyncProviders';
 
 export function BankSync() {
@@ -136,6 +137,28 @@ export function BankSync() {
             );
           }
 
+          // Other synced providers — group by institution name
+          if (syncProvider !== 'unlinked') {
+            return (
+              <View key={syncProvider} style={{ minHeight: 'initial' }}>
+                {groupedAccountEntries.length > 1 && (
+                  <Text
+                    style={{ fontWeight: 500, fontSize: 20, margin: '.5em 0' }}
+                  >
+                    {syncSourceReadable[syncProvider]}
+                  </Text>
+                )}
+                <ProviderGroupedSection
+                  accounts={accounts}
+                  hoveredAccount={hoveredAccount}
+                  onHover={onHover}
+                  onAction={onAction}
+                />
+              </View>
+            );
+          }
+
+          // Unlinked accounts — flat table
           return (
             <View key={syncProvider} style={{ minHeight: 'initial' }}>
               {groupedAccountEntries.length > 1 && (
@@ -146,7 +169,7 @@ export function BankSync() {
                 </Text>
               )}
               <View style={styles.tableContainer}>
-                <AccountsHeader unlinked={syncProvider === 'unlinked'} />
+                <AccountsHeader unlinked />
                 <AccountsList
                   accounts={accounts}
                   hoveredAccount={hoveredAccount}

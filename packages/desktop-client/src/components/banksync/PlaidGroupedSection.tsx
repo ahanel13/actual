@@ -47,14 +47,15 @@ export function PlaidGroupedSection({
   const locale = useLocale();
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
 
-  // Group accounts by Plaid item_id (stored as account.bank)
+  // Group accounts by Plaid item_id.
+  // account.bankId = banks.bank_id = Plaid item_id (set by linkPlaidAccount).
   const accountsByItemId = useMemo(() => {
     const map = new Map<string, AccountEntity[]>();
     for (const account of accounts) {
-      if (account.bank) {
-        const list = map.get(account.bank) ?? [];
+      if (account.bankId) {
+        const list = map.get(account.bankId) ?? [];
         list.push(account);
-        map.set(account.bank, list);
+        map.set(account.bankId, list);
       }
     }
     return map;
@@ -62,7 +63,7 @@ export function PlaidGroupedSection({
 
   // Accounts not associated with any Plaid item
   const orphanAccounts = useMemo(
-    () => accounts.filter(a => !a.bank),
+    () => accounts.filter(a => !a.bankId),
     [accounts],
   );
 
