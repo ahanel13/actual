@@ -31,6 +31,8 @@ export type AccountEntity = {
   bank: string | null;
   bankName: string | null;
   bankId: string | null;
+  /** banks.bank_id — for Plaid this is the Plaid item_id */
+  bankSyncId: string | null;
   mask: string | null; // end of bank account number
   official_name: string | null;
   balance_current: number | null;

@@ -131,6 +131,7 @@ async function getAccounts(): Promise<AccountEntity[]> {
         bank: dbAccount.bank ?? null,
         bankName: dbAccount.bankName ?? null,
         bankId: dbAccount.bankId ?? null,
+        bankSyncId: dbAccount.bankSyncId ?? null,
         mask: dbAccount.mask ?? null,
         official_name: dbAccount.official_name ?? null,
         balance_current: dbAccount.balance_current ?? null,

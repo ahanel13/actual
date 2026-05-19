@@ -20,6 +20,7 @@ import { Link } from '#components/common/Link';
 import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import { useAccounts } from '#hooks/useAccounts';
 import { useDragRef } from '#hooks/useDragRef';
+import { usePlaidItems } from '#hooks/usePlaidItems';
 import { useFormat } from '#hooks/useFormat';
 import { useSheetValue } from '#hooks/useSheetValue';
 import { pushModal } from '#modals/modalsSlice';
@@ -192,6 +193,11 @@ function AccountRow({
   onDragChange,
   onDrop,
 }: AccountRowProps) {
+  const { items: plaidItems } = usePlaidItems();
+  const institutionLogo = account.bankSyncId
+    ? (plaidItems.find(i => i.item_id === account.bankSyncId)
+        ?.institution_logo ?? null)
+    : null;
   const { dragRef } = useDraggable({
     type: dragType,
     onDragChange,
@@ -223,8 +229,12 @@ function AccountRow({
             ':hover': { backgroundColor: theme.tableRowBackgroundHover },
           }}
         >
-          {account.account_sync_source && (
-            <BankLogo bankName={account.bankName} size={26} />
+          {(account.account_sync_source || account.bankName) && (
+            <BankLogo
+              bankName={account.bankName}
+              institutionLogo={institutionLogo}
+              size={26}
+            />
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ fontWeight: 500, fontSize: 14 }}>

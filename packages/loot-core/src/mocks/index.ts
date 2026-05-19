@@ -52,6 +52,7 @@ function emptySyncFields(): Pick<
   | 'bank'
   | 'bankId'
   | 'bankName'
+  | 'bankSyncId'
   | 'mask'
   | 'official_name'
   | 'balance_current'
@@ -65,6 +66,7 @@ function emptySyncFields(): Pick<
     bank: null,
     bankId: null,
     bankName: null,
+    bankSyncId: null,
     mask: null,
     official_name: null,
     balance_current: null,
