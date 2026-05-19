@@ -335,6 +335,14 @@ export function AccountHeader({
                 isFiltered={isFiltered}
                 filteredAmount={filteredAmount}
               />
+
+              {account?.account_sync_source && (
+                <AccountConnectionMeta
+                  account={account}
+                  failedAccounts={failedAccounts}
+                  accountsSyncing={accountsSyncing}
+                />
+              )}
             </View>
 
             {accountId && (
@@ -638,6 +646,90 @@ function AccountSyncSidebar({
         borderRadius: 8,
       }}
     />
+  );
+}
+
+const SYNC_SOURCE_LABELS: Record<string, string> = {
+  plaid: 'Plaid',
+  simpleFin: 'SimpleFIN',
+  goCardless: 'GoCardless',
+  pluggyai: 'Pluggy.ai',
+};
+
+type AccountConnectionMetaProps = {
+  account: AccountEntity;
+  failedAccounts: AccountSyncSidebarProps['failedAccounts'];
+  accountsSyncing: string[];
+};
+
+function AccountConnectionMeta({
+  account,
+  failedAccounts,
+  accountsSyncing,
+}: AccountConnectionMetaProps) {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const isSyncing = accountsSyncing.includes(account.id);
+  const failure = failedAccounts.get(account.id);
+  const source = account.account_sync_source
+    ? (SYNC_SOURCE_LABELS[account.account_sync_source] ??
+      account.account_sync_source)
+    : null;
+
+  const lastSync = account.last_sync
+    ? tsToRelativeTime(account.last_sync, locale, { capitalize: false })
+    : null;
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '6px 12px',
+        fontSize: 12,
+        color: theme.pageTextSubdued,
+      }}
+    >
+      {source && (
+        <span
+          style={{
+            backgroundColor: theme.tableBackground,
+            border: `1px solid ${theme.tableBorder}`,
+            borderRadius: 4,
+            padding: '1px 6px',
+            fontSize: 11,
+            fontWeight: 600,
+            color: theme.pageText,
+            letterSpacing: '0.02em',
+          }}
+        >
+          {source}
+        </span>
+      )}
+
+      {account.bankName && (
+        <span>{account.bankName}</span>
+      )}
+
+      {account.mask && (
+        <span style={{ fontFamily: 'monospace' }}>
+          ••••{account.mask}
+        </span>
+      )}
+
+      {isSyncing ? (
+        <span style={{ color: theme.sidebarItemBackgroundPending }}>
+          {t('Syncing…')}
+        </span>
+      ) : failure ? (
+        <span style={{ color: theme.errorText }}>
+          {failure.code ?? t('Sync error')}
+        </span>
+      ) : lastSync ? (
+        <span>{t('Synced {{ time }}', { time: lastSync })}</span>
+      ) : null}
+    </View>
   );
 }
 
