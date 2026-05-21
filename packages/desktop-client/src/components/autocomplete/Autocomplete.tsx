@@ -313,6 +313,7 @@ function SingleAutocomplete<T extends AutocompleteItem>({
 
   const filtered = isChanged ? filteredSuggestions || suggestions : suggestions;
   const inputRef = useRef(null);
+  const didSelectRef = useRef(false);
   useProperFocus(inputRef, focused);
 
   return (
@@ -330,22 +331,9 @@ function SingleAutocomplete<T extends AutocompleteItem>({
         }
 
         if (onSelect) {
-          // I AM NOT PROUD OF THIS OK??
-          // This WHOLE FILE is a mess anyway
-          // OK SIT DOWN AND I WILL EXPLAIN
-          // This component uses `componentWillReceiveProps` and in there
-          // it will re-filter suggestions if the suggestions change and
-          // a `highlightedIndex` exists. When we select something,
-          // we clear `highlightedIndex` so it should show all suggestions
-          // again. HOWEVER, in the case of a multi-autocomplete, it's
-          // changing the suggestions every time something is selected.
-          // In that case, cWRP is running *before* our state setting that
-          // cleared `highlightedIndex`. Forcing this to run later assures
-          // us that we will clear out local state before cWRP runs.
-          // YEAH THAT'S ALL OK I JUST WANT TO SHIP THIS
-          setTimeout(() => {
-            onSelect(getItemId(item), inputValue);
-          }, 0);
+          didSelectRef.current = true;
+          onSelect(getItemId(item), inputValue);
+          inputRef.current?.blur();
         }
       }}
       highlightedIndex={highlightedIndex}
@@ -494,7 +482,10 @@ function SingleAutocomplete<T extends AutocompleteItem>({
                     onBlur: e => {
                       // Should this be e.nativeEvent
                       e['preventDownshiftDefault'] = true;
-                      inputProps.onBlur?.(e);
+                      if (!didSelectRef.current) {
+                        inputProps.onBlur?.(e);
+                      }
+                      didSelectRef.current = false;
 
                       if (!closeOnBlur) {
                         return;
@@ -542,8 +533,8 @@ function SingleAutocomplete<T extends AutocompleteItem>({
                               // common to accidentally hover an item and then save it
                               e.preventDefault();
                             } else {
-                              // Otherwise, stop propagation so that the table navigator
-                              // doesn't handle it
+                              // Stop propagation so the component stays mounted while
+                              // Downshift fires onSelect. Cell closes via blur in onSelect.
                               e.stopPropagation();
                             }
                           } else if (!strict) {

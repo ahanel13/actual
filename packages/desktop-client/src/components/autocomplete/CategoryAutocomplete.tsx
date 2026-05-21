@@ -178,21 +178,6 @@ function CategoryList({
               />
             );
           })()}
-        {splitTransaction &&
-          (() => {
-            const splitButtonProps = getItemProps
-              ? getItemProps({ item: splitTransaction })
-              : {};
-            const { onClick, ...restSplitButtonProps } = splitButtonProps;
-            return renderSplitTransactionButton({
-              key: 'split',
-              ...restSplitButtonProps,
-              onClick,
-              highlighted:
-                splitTransaction.highlightedIndex === highlightedIndex,
-              embedded,
-            });
-          })()}
         {groupedCategories.map(({ group, categories }) => {
           if (!group) {
             return null;
@@ -227,6 +212,21 @@ function CategoryList({
             </Fragment>
           );
         })}
+        {splitTransaction &&
+          (() => {
+            const splitButtonProps = getItemProps
+              ? getItemProps({ item: splitTransaction })
+              : {};
+            const { onClick, ...restSplitButtonProps } = splitButtonProps;
+            return renderSplitTransactionButton({
+              key: 'split',
+              ...restSplitButtonProps,
+              onClick,
+              highlighted:
+                splitTransaction.highlightedIndex === highlightedIndex,
+              embedded,
+            });
+          })()}
       </View>
       {footer}
     </View>
@@ -234,8 +234,11 @@ function CategoryList({
 }
 
 function customSort(obj: CategoryAutocompleteItem, value: string): number {
+  if (obj.id === 'new') {
+    return -10000;
+  }
   if (obj.id === 'split') {
-    return -6;
+    return 1000;
   }
   const nameRank = rankAutocompleteMatch(obj.name, value);
   if (nameRank < 0) {
@@ -340,7 +343,7 @@ export function CategoryAutocomplete({
     async (idOrIds: string | string[] | null, inputValue: string) => {
       const sourceGroups = categoryGroups || defaultCategoryGroups;
       const targetGroup = sourceGroups.find(
-        g => !g.is_income && !g.is_savings && !g.hidden,
+        g => !g.is_income && !g.is_savings && !g.is_transfer && !g.hidden,
       );
 
       const create = async (name: string): Promise<string | null> => {
@@ -435,15 +438,12 @@ export function CategoryAutocomplete({
       // shapes at runtime; cast to satisfy the type checker.
       onSelect={handleSelect as never}
       getHighlightedIndex={suggestions => {
-        if (suggestions.length === 0) {
-          return null;
-        }
-        const firstId = suggestions[0].id;
-        if (firstId === 'split' || firstId === 'new') {
-          // Skip non-category options when picking a default highlight.
-          return suggestions.length > 1 ? 1 : 0;
-        }
-        return 0;
+        if (suggestions.length === 0) return null;
+        const firstRealIdx = suggestions.findIndex(
+          s => s.id !== 'new' && s.id !== 'split',
+        );
+        if (firstRealIdx !== -1) return firstRealIdx;
+        return suggestions[0]?.id === 'new' ? 0 : null;
       }}
       filterSuggestions={filterSuggestions}
       suggestions={categorySuggestions}
