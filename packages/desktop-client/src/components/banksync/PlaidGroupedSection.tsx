@@ -10,8 +10,8 @@ import type { AccountEntity } from '@actual-app/core/types/models';
 import { formatDistanceToNow } from 'date-fns';
 
 import { BankLogo } from '#components/common/BankLogo';
-import { usePlaidItems } from '#hooks/usePlaidItems';
 import { useLocale } from '#hooks/useLocale';
+import { usePlaidItems } from '#hooks/usePlaidItems';
 import { pushModal } from '#modals/modalsSlice';
 import { addNotification } from '#notifications/notificationsSlice';
 import { useDispatch } from '#redux';
@@ -79,7 +79,7 @@ export function PlaidGroupedSection({
         ),
       )
     )
-      return;
+      {return;}
 
     setRemovingItemId(itemId);
     try {
@@ -109,7 +109,8 @@ export function PlaidGroupedSection({
   return (
     <View style={{ gap: 16 }}>
       {items.map(item => {
-        const itemAccounts = accountsByInstitution.get(item.institution_name ?? '') ?? [];
+        const itemAccounts =
+          accountsByInstitution.get(item.institution_name ?? '') ?? [];
         const lastSynced = item.last_synced_at
           ? formatDistanceToNow(new Date(item.last_synced_at), {
               addSuffix: true,

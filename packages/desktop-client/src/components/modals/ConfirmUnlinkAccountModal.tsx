@@ -54,7 +54,8 @@ export function ConfirmUnlinkAccountModal({
             {!isChangingProvider && (
               <Paragraph>
                 <Trans>
-                  Are you sure you want to unlink <strong>{accountName}</strong>?
+                  Are you sure you want to unlink <strong>{accountName}</strong>
+                  ?
                 </Trans>
               </Paragraph>
             )}

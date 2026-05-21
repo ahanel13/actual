@@ -156,9 +156,7 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
     close();
   };
 
-  const syncingAccountIds = useSelector(
-    state => state.account.accountsSyncing,
-  );
+  const syncingAccountIds = useSelector(state => state.account.accountsSyncing);
   const isSyncing = syncingAccountIds.includes(account.id);
 
   const unlinkAccount = useUnlinkAccountMutation();
@@ -276,7 +274,9 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
               marginTop: 20,
             }}
           >
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            <View
+              style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}
+            >
               <Button
                 style={{ color: theme.errorText }}
                 onPress={() => {

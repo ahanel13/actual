@@ -54,9 +54,7 @@ export function MobileBankSyncAccountEditPage() {
     void navigate('/bank-sync');
   };
 
-  const syncingAccountIds = useSelector(
-    state => state.account.accountsSyncing,
-  );
+  const syncingAccountIds = useSelector(state => state.account.accountsSyncing);
   const isSyncing = accountId ? syncingAccountIds.includes(accountId) : false;
 
   const unlinkAccount = useUnlinkAccountMutation();
@@ -213,10 +211,7 @@ export function MobileBankSyncAccountEditPage() {
           }}
         >
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <Button
-              style={{ color: theme.errorText }}
-              onPress={handleUnlink}
-            >
+            <Button style={{ color: theme.errorText }} onPress={handleUnlink}>
               <Trans>Unlink account</Trans>
             </Button>
             <Button

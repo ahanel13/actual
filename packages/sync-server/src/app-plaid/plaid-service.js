@@ -131,7 +131,13 @@ export const plaidService = {
         primary_color: inst.primary_color ?? null,
       };
     } catch {
-      return { institution_id: institutionId, name: null, logo: null, url: null, primary_color: null };
+      return {
+        institution_id: institutionId,
+        name: null,
+        logo: null,
+        url: null,
+        primary_color: null,
+      };
     }
   },
 

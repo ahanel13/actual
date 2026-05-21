@@ -98,7 +98,6 @@ function clearItemError(itemId) {
   }
 }
 
-
 app.post(
   '/status',
   handleError(async (req, res) => {

@@ -165,9 +165,7 @@ export function SelectLinkedAccountsModal(
     const externalAccountIds = new Set(externalAccounts.map(a => a.account_id));
     return new Set(
       localAccounts
-        .filter(
-          acc => acc.account_id && externalAccountIds.has(acc.account_id),
-        )
+        .filter(acc => acc.account_id && externalAccountIds.has(acc.account_id))
         .map(acc => acc.account_id as string),
     );
   });
