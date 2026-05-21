@@ -75,7 +75,11 @@ export const AccountRow = memo(
           name="bankLogo"
           width={44}
           plain
-          style={{ padding: '8px 4px 8px 10px', display: 'flex', alignItems: 'center' }}
+          style={{
+            padding: '8px 4px 8px 10px',
+            display: 'flex',
+            alignItems: 'center',
+          }}
         >
           <BankLogo
             bankName={account.bankName ?? institutionName}
@@ -100,7 +104,7 @@ export const AccountRow = memo(
               />
             </InitialFocus>
           ) : (
-            <Tooltip content="Click to rename" placement="bottom start">
+            <Tooltip content={t("Click to rename")} placement="bottom start">
               <span
                 style={{ cursor: 'text' }}
                 onClick={() => setIsEditing(true)}

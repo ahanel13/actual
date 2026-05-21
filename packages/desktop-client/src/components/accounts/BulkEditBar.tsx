@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 
 import { theme } from '@actual-app/components/theme';
 import type { TransactionEntity } from '@actual-app/core/types/models';
@@ -20,7 +20,11 @@ const EDIT_ACTIONS: { label: string; field: keyof TransactionEntity }[] = [
   { label: 'Notes', field: 'notes' },
 ];
 
-export function BulkEditBar({ onEdit, onDelete, onDuplicate }: BulkEditBarProps) {
+export function BulkEditBar({
+  onEdit,
+  onDelete,
+  onDuplicate,
+}: BulkEditBarProps) {
   const { t } = useTranslation();
   const selectedItems = useSelectedItems();
   const dispatchSelected = useSelectedDispatch();
@@ -110,7 +114,7 @@ export function BulkEditBar({ onEdit, onDelete, onDuplicate }: BulkEditBarProps)
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         onClick={() => onDuplicate(ids)}
       >
-        {t('Duplicate')}
+        {<Trans>Duplicate</Trans>}
       </button>
 
       <button
@@ -128,7 +132,11 @@ export function BulkEditBar({ onEdit, onDelete, onDuplicate }: BulkEditBarProps)
 
       <button
         aria-label={t('Clear selection')}
-        style={{ ...btnStyle(theme.pageTextSubdued), fontSize: 16, padding: '3px 8px' }}
+        style={{
+          ...btnStyle(theme.pageTextSubdued),
+          fontSize: 16,
+          padding: '3px 8px',
+        }}
         onMouseEnter={e =>
           (e.currentTarget.style.background = theme.tableBackground)
         }

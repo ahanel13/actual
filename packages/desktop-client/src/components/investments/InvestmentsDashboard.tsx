@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans } from 'react-i18next';
+
 
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -30,9 +32,11 @@ type TimeRange = '1mo' | '3mo' | '6mo' | '1y';
 
 const STALE_MINUTES = 15;
 
-function oldestPriceFetch(
-  accountData: { holdings: HoldingWithPrice[] }[],
-): { oldest: string | null; hasMissing: boolean; hasHoldings: boolean } {
+function oldestPriceFetch(accountData: { holdings: HoldingWithPrice[] }[]): {
+  oldest: string | null;
+  hasMissing: boolean;
+  hasHoldings: boolean;
+} {
   let oldest: string | null = null;
   let hasMissing = false;
   let hasHoldings = false;
@@ -372,7 +376,9 @@ function AllocationSection({
           color: theme.pageText,
           marginBottom: 20,
         }}
-      >Portfolio allocation</div>
+      ><Trans>
+        Portfolio allocation
+      </Trans></div>
       <div
         style={{
           display: 'flex',
@@ -583,8 +589,7 @@ function HoldingsSection({
     );
   }
 
-  const cols =
-    '80px minmax(0, 1.4fr) minmax(0, 1fr) 90px 90px 120px 130px';
+  const cols = '80px minmax(0, 1.4fr) minmax(0, 1fr) 90px 90px 120px 130px';
 
   return (
     <View
@@ -801,10 +806,11 @@ export function InvestmentsDashboard() {
   const refreshAll = useRefreshAllPricesMutation();
   const autoCheckedRef = useRef(false);
 
-  const { oldest: oldestFetch, hasMissing, hasHoldings } = useMemo(
-    () => oldestPriceFetch(accountData),
-    [accountData],
-  );
+  const {
+    oldest: oldestFetch,
+    hasMissing,
+    hasHoldings,
+  } = useMemo(() => oldestPriceFetch(accountData), [accountData]);
 
   useEffect(() => {
     if (autoCheckedRef.current) return;
@@ -863,9 +869,7 @@ export function InvestmentsDashboard() {
         }}
       >
         <div>
-          <div
-            style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}
-          >
+          <div style={{ fontSize: 22, fontWeight: 700, color: theme.pageText }}>
             Investments
           </div>
           {totalValue > 0 && (
@@ -908,7 +912,7 @@ export function InvestmentsDashboard() {
                 opacity: refreshAll.isPending ? 0.6 : 1,
               }}
             >
-              {refreshAll.isPending ? 'Refreshing…' : 'Refresh prices'}
+              {refreshAll.isPending ? 'Refreshing…' : t('Refresh prices')}
             </button>
             <div
               style={{
@@ -917,7 +921,7 @@ export function InvestmentsDashboard() {
               }}
             >
               {hasMissing
-                ? 'Prices not yet fetched'
+                ? t('Prices not yet fetched')
                 : oldestFetch
                   ? `Updated ${formatTimeAgo(oldestFetch)}`
                   : ''}
@@ -971,7 +975,7 @@ export function InvestmentsDashboard() {
             }}
           >
             <StatCard
-              label="Your Portfolio"
+              label={t("Your Portfolio")}
               pct={portfolioPct}
               dot={PORTFOLIO_COLOR}
             />
@@ -986,68 +990,68 @@ export function InvestmentsDashboard() {
                   data={chartData}
                   margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
                 >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={theme.tableBorder}
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={fmtDate}
-                  tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                  minTickGap={40}
-                />
-                <YAxis
-                  tickFormatter={v =>
-                    `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`
-                  }
-                  tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={64}
-                  padding={{ top: 8, bottom: 8 }}
-                  tickCount={6}
-                />
-                <ReferenceLine
-                  y={0}
-                  stroke={theme.tableBorder}
-                  strokeWidth={1}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: theme.cardBackground,
-                    border: `1px solid ${theme.tableBorder}`,
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Legend
-                  formatter={name =>
-                    name === 'portfolio' ? 'Portfolio' : 'S&P 500'
-                  }
-                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="portfolio"
-                  name="portfolio"
-                  stroke={PORTFOLIO_COLOR}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="sp500"
-                  name="sp500"
-                  stroke={SP500_COLOR}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls
-                />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={theme.tableBorder}
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={fmtDate}
+                    tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={40}
+                  />
+                  <YAxis
+                    tickFormatter={v =>
+                      `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`
+                    }
+                    tick={{ fontSize: 11, fill: theme.pageTextSubdued }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={64}
+                    padding={{ top: 8, bottom: 8 }}
+                    tickCount={6}
+                  />
+                  <ReferenceLine
+                    y={0}
+                    stroke={theme.tableBorder}
+                    strokeWidth={1}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: theme.cardBackground,
+                      border: `1px solid ${theme.tableBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend
+                    formatter={name =>
+                      name === 'portfolio' ? 'Portfolio' : 'S&P 500'
+                    }
+                    wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="portfolio"
+                    name="portfolio"
+                    stroke={PORTFOLIO_COLOR}
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="sp500"
+                    name="sp500"
+                    stroke={SP500_COLOR}
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>

@@ -716,19 +716,15 @@ function AccountConnectionMeta({
         </span>
       )}
 
-      {account.bankName && (
-        <span>{account.bankName}</span>
-      )}
+      {account.bankName && <span>{account.bankName}</span>}
 
       {account.mask && (
-        <span style={{ fontFamily: 'monospace' }}>
-          ••••{account.mask}
-        </span>
+        <span style={{ fontFamily: 'monospace' }}>••••{account.mask}</span>
       )}
 
       {isSyncing ? (
         <span style={{ color: theme.sidebarItemBackgroundPending }}>
-          {t('Syncing…')}
+          {<Trans>Syncing…</Trans>}
         </span>
       ) : failure ? (
         <span style={{ color: theme.errorText }}>
