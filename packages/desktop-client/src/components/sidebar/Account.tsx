@@ -25,12 +25,15 @@ import { css, cx } from '@emotion/css';
 import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
 import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
 import { Link } from '#components/common/Link';
+import { FinancialText } from '#components/FinancialText';
 import { Notes } from '#components/Notes';
+import { PrivacyFilter } from '#components/PrivacyFilter';
 import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import type { OnDragChangeCallback, OnDropCallback } from '#components/sort';
 import { CellValue } from '#components/spreadsheet/CellValue';
 import { useContextMenu } from '#hooks/useContextMenu';
 import { useDragRef } from '#hooks/useDragRef';
+import { useFormat } from '#hooks/useFormat';
 import { useIsTestEnv } from '#hooks/useIsTestEnv';
 import { useNotes } from '#hooks/useNotes';
 import { useSyncedPref } from '#hooks/useSyncedPref';
@@ -133,8 +136,17 @@ export function Account<FieldName extends SheetFields<'account'>>({
   const needsTooltip = !!account?.id && !isTouchDevice;
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
+  const format = useFormat();
 
-  const balanceCell = <CellValue binding={query} type="financial" />;
+  const bankBalance = account?.balance_current ?? null;
+  const balanceCell =
+    bankBalance != null ? (
+      <PrivacyFilter>
+        <FinancialText>{format(bankBalance, 'financial')}</FinancialText>
+      </PrivacyFilter>
+    ) : (
+      <CellValue binding={query} type="financial" />
+    );
 
   const accountRow = (
     <View

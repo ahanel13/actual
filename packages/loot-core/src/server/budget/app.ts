@@ -398,17 +398,20 @@ async function createCategoryGroup({
   name,
   isIncome,
   isSavings,
+  isTransfer,
   hidden,
 }: {
   name: CategoryGroupEntity['name'];
   isIncome?: CategoryGroupEntity['is_income'];
   isSavings?: CategoryGroupEntity['is_savings'];
+  isTransfer?: CategoryGroupEntity['is_transfer'];
   hidden?: CategoryGroupEntity['hidden'];
 }): Promise<CategoryGroupEntity['id']> {
   return await db.insertCategoryGroup({
     name,
     is_income: isIncome ? 1 : 0,
     is_savings: isSavings ? 1 : 0,
+    is_transfer: isTransfer ? 1 : 0,
     hidden: hidden ? 1 : 0,
   });
 }

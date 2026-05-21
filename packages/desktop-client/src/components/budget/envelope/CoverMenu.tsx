@@ -44,7 +44,9 @@ export function CoverMenu({
   const [fromCategoryId, setFromCategoryId] = useState<string | null>(null);
 
   const filteredCategoryGroups = useMemo(() => {
-    const expenseGroups = originalCategoryGroups.filter(g => !g.is_income);
+    const expenseGroups = originalCategoryGroups.filter(
+      g => !g.is_income && !g.is_transfer,
+    );
     const categoryGroups = showToBeBudgeted
       ? addToBeBudgetedGroup(expenseGroups)
       : expenseGroups;

@@ -136,15 +136,33 @@ function AllTransactions({
 
   transactions ??= [];
 
+  // Reconciles computed running balances against the bank-reported figure,
+  // which may differ from the local transaction sum due to unsynced transactions.
+  const adjustedBalances = useMemo(() => {
+    if (
+      !balances ||
+      account?.balance_current == null ||
+      transactions.length === 0
+    ) {
+      return balances;
+    }
+    const transactionSum = balances[transactions[0].id] ?? 0;
+    const offset = account.balance_current - transactionSum;
+    if (offset === 0) return balances;
+    return Object.fromEntries(
+      Object.entries(balances).map(([id, bal]) => [id, bal + offset]),
+    ) as Record<TransactionEntity['id'], IntegerAmount>;
+  }, [balances, account?.balance_current, transactions]);
+
   const runningBalance = useMemo(() => {
     if (!showBalances) {
       return 0;
     }
 
-    return balances && transactions?.length > 0
-      ? (balances[transactions[0].id] ?? 0)
+    return adjustedBalances && transactions?.length > 0
+      ? (adjustedBalances[transactions[0].id] ?? 0)
       : 0;
-  }, [showBalances, balances, transactions]);
+  }, [showBalances, adjustedBalances, transactions]);
 
   const prependBalances = useMemo(() => {
     if (!showBalances) {
@@ -170,14 +188,14 @@ function AllTransactions({
 
   const allBalances = useMemo(() => {
     // Don't prepend scheduled transactions if we are filtering
-    if (!filtered && prependBalances && balances) {
-      return { ...prependBalances, ...balances };
+    if (!filtered && prependBalances && adjustedBalances) {
+      return { ...prependBalances, ...adjustedBalances };
     }
-    return balances;
-  }, [filtered, prependBalances, balances]);
+    return adjustedBalances;
+  }, [filtered, prependBalances, adjustedBalances]);
 
   if (!previewTransactions?.length || filtered) {
-    return children(transactions, balances);
+    return children(transactions, adjustedBalances);
   }
   return children(allTransactions, allBalances);
 }

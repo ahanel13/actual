@@ -149,9 +149,10 @@ function FilteredBalance({ filteredAmount }: FilteredBalanceProps) {
 
 type MoreBalancesProps = {
   balanceQuery: { name: `balance-query-${string}`; query: Query };
+  account?: AccountEntity;
 };
 
-function MoreBalances({ balanceQuery }: MoreBalancesProps) {
+function MoreBalances({ balanceQuery, account }: MoreBalancesProps) {
   const { t } = useTranslation();
 
   const cleared = useSheetValue<'balance', `balance-query-${string}-cleared`>({
@@ -166,9 +167,19 @@ function MoreBalances({ balanceQuery }: MoreBalancesProps) {
       '-uncleared') as `balance-query-${string}-uncleared`,
     query: balanceQuery.query.filter({ cleared: false }),
   });
+  const total = useSheetValue<'balance', `balance-query-${string}`>({
+    name: balanceQuery.name,
+    query: balanceQuery.query,
+  });
 
   return (
     <>
+      {account?.balance_current != null && (
+        <DetailedBalance
+          name={t('Transaction balance:')}
+          balance={total ?? 0}
+        />
+      )}
       <DetailedBalance name={t('Cleared total:')} balance={cleared ?? 0} />
       <DetailedBalance name={t('Uncleared total:')} balance={uncleared ?? 0} />
     </>
@@ -195,6 +206,9 @@ export function Balances({
   const selectedItems = useSelectedItems();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const isButtonHovered = useHover(buttonRef as RefObject<HTMLButtonElement>);
+  const format = useFormat();
+
+  const bankBalance = account?.balance_current ?? null;
 
   return (
     <View
@@ -217,31 +231,50 @@ export function Balances({
           paddingBottom: 1,
         }}
       >
-        <CellValue
-          binding={
-            { ...balanceQuery, value: 0 } as Binding<
-              'balance',
-              `balance-query-${string}`
-            >
-          }
-          type="financial"
-        >
-          {props => (
-            <CellValueText
-              {...props}
+        {bankBalance != null ? (
+          <PrivacyFilter>
+            <FinancialText
               style={{
                 fontSize: 28,
                 fontWeight: 600,
                 color:
-                  props.value < 0
+                  bankBalance < 0
                     ? theme.numberNegative
-                    : props.value > 0
+                    : bankBalance > 0
                       ? theme.numberPositive
                       : theme.pageTextSubdued,
               }}
-            />
-          )}
-        </CellValue>
+            >
+              {format(bankBalance, 'financial')}
+            </FinancialText>
+          </PrivacyFilter>
+        ) : (
+          <CellValue
+            binding={
+              { ...balanceQuery, value: 0 } as Binding<
+                'balance',
+                `balance-query-${string}`
+              >
+            }
+            type="financial"
+          >
+            {props => (
+              <CellValueText
+                {...props}
+                style={{
+                  fontSize: 28,
+                  fontWeight: 600,
+                  color:
+                    props.value < 0
+                      ? theme.numberNegative
+                      : props.value > 0
+                        ? theme.numberPositive
+                        : theme.pageTextSubdued,
+                }}
+              />
+            )}
+          </CellValue>
+        )}
 
         <SvgArrowButtonRight1
           style={{
@@ -258,7 +291,9 @@ export function Balances({
         />
       </Button>
 
-      {showExtraBalances && <MoreBalances balanceQuery={balanceQuery} />}
+      {showExtraBalances && (
+        <MoreBalances balanceQuery={balanceQuery} account={account} />
+      )}
 
       {selectedItems.size > 0 && (
         <SelectedBalance selectedItems={selectedItems} account={account} />

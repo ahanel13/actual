@@ -56,6 +56,7 @@ export type DbCategoryGroup = {
   is_income: 1 | 0;
   is_savings: 1 | 0;
   is_ungrouped: 1 | 0;
+  is_transfer: 1 | 0;
   sort_order: number;
   hidden: 1 | 0;
   tombstone: 1 | 0;

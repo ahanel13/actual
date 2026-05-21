@@ -223,7 +223,7 @@ export function MonarchSummaryPanel({
   const incomeGroups = categoryGroups.filter(g => g.is_income && !g.hidden);
   const savingsGroups = categoryGroups.filter(g => g.is_savings && !g.hidden);
   const expenseGroups = categoryGroups.filter(
-    g => !g.is_income && !g.is_savings && !g.hidden,
+    g => !g.is_income && !g.is_savings && !g.is_transfer && !g.hidden,
   );
 
   const totalIncomeBudget = Object.values(incomeBudgets).reduce(

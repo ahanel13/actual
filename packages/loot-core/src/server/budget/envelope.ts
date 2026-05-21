@@ -80,7 +80,7 @@ export function createCategoryGroup(group, sheetName) {
     run: sumAmounts,
   });
 
-  if (!group.is_income) {
+  if (!group.is_income && !group.is_transfer) {
     sheet.get().createDynamic(sheetName, 'group-budget-' + group.id, {
       initialValue: 0,
       dependencies: group.categories.map(cat => `budget-${cat.id}`),
@@ -97,7 +97,12 @@ export function createCategoryGroup(group, sheetName) {
 
 export function createSummary(groups, categories, prevSheetName, sheetName) {
   const incomeGroup = groups.filter(group => group.is_income)[0];
-  const expenseCategories = categories.filter(cat => !cat.is_income);
+  const transferGroupIds = new Set(
+    groups.filter(g => g.is_transfer).map(g => g.id),
+  );
+  const expenseCategories = categories.filter(
+    cat => !cat.is_income && !transferGroupIds.has(cat.cat_group),
+  );
   const incomeCategories = categories.filter(cat => cat.is_income);
 
   sheet.get().createStatic(sheetName, 'buffered', 0);
@@ -150,7 +155,7 @@ export function createSummary(groups, categories, prevSheetName, sheetName) {
   sheet.get().createDynamic(sheetName, 'total-budgeted', {
     initialValue: 0,
     dependencies: groups
-      .filter(group => !group.is_income)
+      .filter(group => !group.is_income && !group.is_transfer)
       .map(group => `group-budget-${group.id}`),
     run: (...amounts) => {
       // Negate budgeted amount
@@ -211,7 +216,7 @@ export function createSummary(groups, categories, prevSheetName, sheetName) {
   sheet.get().createDynamic(sheetName, 'total-spent', {
     initialValue: 0,
     dependencies: groups
-      .filter(group => !group.is_income)
+      .filter(group => !group.is_income && !group.is_transfer)
       .map(group => `group-sum-amount-${group.id}`),
     run: sumAmounts,
   });
@@ -219,7 +224,7 @@ export function createSummary(groups, categories, prevSheetName, sheetName) {
   sheet.get().createDynamic(sheetName, 'total-leftover', {
     initialValue: 0,
     dependencies: groups
-      .filter(group => !group.is_income)
+      .filter(group => !group.is_income && !group.is_transfer)
       .map(group => `group-leftover-${group.id}`),
     run: sumAmounts,
   });
@@ -381,7 +386,7 @@ export function handleCategoryGroupChange(months, oldValue, newValue) {
   ) {
     const group = newValue;
 
-    if (!group.is_income) {
+    if (!group.is_income && !group.is_transfer) {
       months.forEach(month => {
         const sheetName = monthUtils.sheetForMonth(month);
 

@@ -35,7 +35,7 @@ export function TransferMenu({
     useCategories();
   const filteredCategoryGroups = useMemo(() => {
     const expenseCategoryGroups = originalCategoryGroups.filter(
-      g => !g.is_income,
+      g => !g.is_income && !g.is_transfer,
     );
     const categoryGroups = showToBeBudgeted
       ? addToBeBudgetedGroup(expenseCategoryGroups)

@@ -57,9 +57,10 @@ export function removeCategoriesFromGroups(
 
 export function separateGroups(categoryGroups: CategoryGroupEntity[]) {
   return [
-    categoryGroups.filter(g => !g.is_income && !g.is_savings),
+    categoryGroups.filter(g => !g.is_income && !g.is_savings && !g.is_transfer),
     categoryGroups.filter(g => !!g.is_savings),
     categoryGroups.find(g => g.is_income),
+    categoryGroups.filter(g => !!g.is_transfer),
   ] as const;
 }
 

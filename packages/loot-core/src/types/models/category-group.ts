@@ -6,6 +6,7 @@ export type CategoryGroupEntity = {
   is_income?: boolean;
   is_savings?: boolean;
   is_ungrouped?: boolean;
+  is_transfer?: boolean;
   sort_order?: number;
   tombstone?: boolean;
   hidden?: boolean;

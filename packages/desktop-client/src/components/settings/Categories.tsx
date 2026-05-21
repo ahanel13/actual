@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@actual-app/components/button';
 import { SvgAdd } from '@actual-app/components/icons/v0';
 import { SvgDelete } from '@actual-app/components/icons/v0';
+import { SvgArrowsSynchronize } from '@actual-app/components/icons/v2';
 import { Input } from '@actual-app/components/input';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
@@ -164,75 +165,117 @@ export function Categories() {
     />
   );
 
-  const renderGroup = (group: CategoryGroupEntity) => (
-    <View key={group.id} style={{ marginTop: 6 }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <InlineRenameRow
-            initialName={group.name}
-            emphasis
-            onSave={name => {
-              if (name === group.name) return;
-              const { categories: _categories, ...rest } = group;
-              saveGroup.mutate({
-                group: { ...rest, name } as CategoryGroupEntity,
-              });
-            }}
-            onDelete={
-              group.is_income
-                ? undefined
-                : () => deleteGroup.mutate({ id: group.id })
-            }
-          />
-        </View>
-      </View>
-
-      {group.categories?.map(c => renderCategory(group, c))}
-
-      {newCategoryDraft?.groupId === group.id ? (
-        <View style={{ paddingLeft: 20, marginTop: 4 }}>
-          <InlineRenameRow
-            initialName=""
-            placeholder={t('New category name')}
-            onSave={name => {
-              createCategory.mutate({
-                name,
-                groupId: group.id,
-                isIncome: !!group.is_income,
-                isHidden: false,
-              });
-              setNewCategoryDraft(null);
-            }}
-          />
-        </View>
-      ) : (
-        <View style={{ paddingLeft: 20, marginTop: 2 }}>
-          <Button
-            variant="bare"
-            onPress={() => setNewCategoryDraft({ groupId: group.id, name: '' })}
-            style={{
-              fontSize: 12,
-              color: theme.pageTextLight,
-              padding: '2px 4px',
-            }}
-          >
-            <SvgAdd
-              width={9}
-              height={9}
-              style={{ marginRight: 4, display: 'inline-block' }}
+  const renderGroup = (group: CategoryGroupEntity) => {
+    const isTransferGroup = !!group.is_transfer;
+    return (
+      <View key={group.id} style={{ marginTop: 6 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <InlineRenameRow
+              initialName={group.name}
+              emphasis
+              onSave={name => {
+                if (name === group.name) return;
+                const { categories: _categories, ...rest } = group;
+                saveGroup.mutate({
+                  group: { ...rest, name } as CategoryGroupEntity,
+                });
+              }}
+              onDelete={
+                group.is_income
+                  ? undefined
+                  : () => deleteGroup.mutate({ id: group.id })
+              }
             />
-            <Trans>Add category</Trans>
-          </Button>
+          </View>
+          {!group.is_income && (
+            <Button
+              variant="bare"
+              onPress={() => {
+                const { categories: _categories, ...rest } = group;
+                saveGroup.mutate({
+                  group: {
+                    ...rest,
+                    is_transfer: !isTransferGroup,
+                  } as CategoryGroupEntity,
+                });
+              }}
+              style={{
+                padding: '3px 6px',
+                fontSize: 11,
+                color: isTransferGroup
+                  ? theme.noticeTextLight
+                  : theme.pageTextLight,
+                borderRadius: 4,
+                border: `1px solid ${isTransferGroup ? theme.noticeTextLight : theme.tableBorder}`,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <SvgArrowsSynchronize width={10} height={10} />
+              {isTransferGroup ? (
+                <Trans>Transfers</Trans>
+              ) : (
+                <Trans>Set as Transfers</Trans>
+              )}
+            </Button>
+          )}
         </View>
-      )}
-    </View>
-  );
+
+        {group.categories?.map(c => renderCategory(group, c))}
+
+        {newCategoryDraft?.groupId === group.id ? (
+          <View style={{ paddingLeft: 20, marginTop: 4 }}>
+            <InlineRenameRow
+              initialName=""
+              placeholder={t('New category name')}
+              onSave={name => {
+                createCategory.mutate({
+                  name,
+                  groupId: group.id,
+                  isIncome: !!group.is_income,
+                  isHidden: false,
+                });
+                setNewCategoryDraft(null);
+              }}
+            />
+          </View>
+        ) : (
+          <View style={{ paddingLeft: 20, marginTop: 2 }}>
+            <Button
+              variant="bare"
+              onPress={() =>
+                setNewCategoryDraft({ groupId: group.id, name: '' })
+              }
+              style={{
+                fontSize: 12,
+                color: theme.pageTextLight,
+                padding: '2px 4px',
+              }}
+            >
+              <SvgAdd
+                width={9}
+                height={9}
+                style={{ marginRight: 4, display: 'inline-block' }}
+              />
+              <Trans>Add category</Trans>
+            </Button>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const visibleGroups = groups.filter(g => !g.hidden);
+  const regularGroups = visibleGroups.filter(g => !g.is_transfer);
+  const transferGroups = visibleGroups.filter(g => !!g.is_transfer);
 
   return (
     <Setting
@@ -265,8 +308,40 @@ export function Categories() {
         </Trans>
       </Text>
       <View style={{ width: '100%', gap: 6 }}>
-        {groups.filter(g => !g.hidden).map(renderGroup)}
+        {regularGroups.map(g => renderGroup(g))}
       </View>
+
+      {transferGroups.length > 0 && (
+        <View style={{ width: '100%', marginTop: 16, gap: 6 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: `1px solid ${theme.tableBorder}`,
+            }}
+          >
+            <SvgArrowsSynchronize
+              width={12}
+              height={12}
+              style={{ color: theme.pageTextSubdued }}
+            />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                color: theme.pageTextSubdued,
+                textTransform: 'uppercase',
+              }}
+            >
+              <Trans>Transfers</Trans>
+            </Text>
+          </View>
+          {transferGroups.map(g => renderGroup(g))}
+        </View>
+      )}
     </Setting>
   );
 }
